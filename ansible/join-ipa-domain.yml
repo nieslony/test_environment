@@ -1,0 +1,55 @@
+- name: Join IPA domain
+  hosts: all
+  become: true
+
+  vars_files:
+    - ipa-vars.yml
+
+  vars:
+    ipa_client_packages:
+        - "@idm"
+
+  tasks:
+    - name: Install Updates
+      dnf:
+        name: "*"
+        state: latest
+
+    - name: "Install Packages: {{ ipa_client_packages | join(', ') }}"
+      dnf:
+        name: "{{ ipa_client_packages }}"
+
+    - name: "Join {{ ipaserver_realm }}"
+      command: >
+        ipa-client-install
+        --unattended
+        --principal=admin
+        --password="{{ ipa.admin_password }}"
+        --force-join
+        --configure-firefox
+        --mkhomedir
+        --ssh-trust-dns
+        --enable-dns-updates
+        --ntp-pool=pool.ntp.org
+      args:
+        creates: /etc/krb5.keytab
+
+    - name: Configure sssd
+      ini_file:
+        path: /etc/sssd/sssd.conf
+        section: nss
+        option: "{{ item.key }}"
+        value: "{{ item.value }}"
+      loop: "{{ sssd_params | dict2items }}"
+      vars:
+        sssd_params:
+            default_shell: "/bin/bash"
+            case_sensitive: "False"
+      notify:
+        - Restart SSSD
+
+  handlers:
+    - name: Restart SSSD
+      service:
+        name: sssd
+        state: restarted

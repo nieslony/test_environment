@@ -1,0 +1,38 @@
+- name: Setup FreeIpa
+  hosts: all
+  become: true
+
+  vars_files:
+    - ipa-vars.yml
+
+  vars:
+    fedora_packages:
+        - "@workstation-product-environment"
+        - python3-networkmanager
+        - python3-gobject-base
+        - telnet
+
+  tasks:
+    - name: Install Updates
+      dnf:
+        name: "*"
+        state: latest
+
+    - name: "Install Packages: {{ fedora_packages | join(', ') }}"
+      dnf:
+        name: "{{ fedora_packages }}"
+
+    - name: Set x11 keyboard layout
+      command: "localectl set-x11-keymap de"
+
+    - name: Set keyboard layout
+      command: "localectl set-keymap de"
+
+    - name: Set default target
+      command: "systemctl set-default graphical.target"
+
+    - name: Start display manager
+      service:
+        name: display-manager
+        state: started
+        enabled: yes

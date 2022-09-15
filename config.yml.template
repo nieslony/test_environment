@@ -1,0 +1,7 @@
+proxy_url: "http://1.2.3.4:3128"
+
+ipa:
+    admin_password: "ChangeMe"
+
+dc:
+    admin_password: "ChangeMe"

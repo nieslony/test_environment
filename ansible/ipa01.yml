@@ -1,0 +1,128 @@
+- name: Setup FreeIpa
+  hosts: all
+  become: true
+
+  vars_files:
+    - "../config.yml"
+    - ipa-vars.yml
+
+  vars:
+    ipa_server_packages:
+        - "@idm:DL1/server"
+        - "@idm:DL1/adtrust"
+        - "@idm:DL1/dns"
+
+  tasks:
+    - debug:
+        msg: "{{ lookup('ansible.builtin.env') }}"
+
+    - name: Configure internel network interface
+      shell: |
+        ip a
+        nmcli connection modify Lab_Linux_Internal \
+            ipv4.method manual \
+            ipv4.addresses 192.168.120.20/24 \
+            ipv4.gateway 192.168.120.254 \
+        nmcli connection down Lab_Linux_Internal
+        nmcli connection up Lab_Linux_Internal
+        nmcli con sh
+        ip a
+      register: nmcli
+      when: false
+
+    - name: "Install Updates"
+      dnf:
+        name: "*"
+        state: latest
+
+    - name: "Install module idm"
+      dnf:
+        name: "@idm:DL1"
+        state: latest
+
+    - name: "Install more idm modules"
+      dnf:
+        name: "{{ ipa_server_packages }}"
+
+    - name: "Remove {{ ansible_fqdn }} from /etc/hosts"
+      lineinfile:
+        path: /etc/hosts
+        regexp: "^127.*{{ ansible_fqdn }}"
+        state: absent
+
+    - name: "Setup IPA"
+      command: >
+        ipa-server-install
+        --unattended
+        --ds-password="{{ ipaadmin_password }}"
+        --admin-password="{{ ipaadmin_password }}"
+        --domain="{{ ipaserver_domain }}"
+        --realm="{{ ipaserver_realm }}"
+        --hostname="{{ ansible_fqdn }}"
+        --no-host-dns
+        --setup-kra
+        --setup-dns
+        --setup-adtrust
+        --mkhomedir
+        --auto-reverse
+        --no-dnssec-validation
+        --ssh-trust-dns
+        --no-forwarders
+        --ntp-pool=pool.ntp.org
+        --ip-address=192.168.120.20
+      args:
+        creates: /etc/krb5.keytab
+
+#    - name: Open firewall
+#      firewalld:
+
+    - name: "Add Windows forward DNS zone"
+      ipadnsforwardzone:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: windows.lab
+        forwarders:
+            - ip_address: 192.168.110.20
+        forwardpolicy: only
+        state: present
+        skip_overlap_check: true
+      environment:
+        LANG: "en_US@UTF-8"
+        LANGUAGE: "en_US@UTF-8"
+
+    - name: "Add Windows forward reverse DNS zone"
+      ipadnsforwardzone:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: 110.168.192.in-addr.arpa.
+        forwarders:
+            - ip_address: 192.168.110.20
+        forwardpolicy: only
+        state: present
+        skip_overlap_check: true
+      environment:
+        LANG: "en_US@UTF-8"
+        LANGUAGE: "en_US@UTF-8"
+
+    - name: "Create trust to AD"
+      ipatrust:
+        realm: WINDOWS.LAB
+        state: present
+        admin: Administrator
+        password: "{{ dc.adminPassword }}"
+        server: dc01.windows.lab
+        two_way: false
+        ipaadmin_password: "{{ ipa.admin_password }}"
+      environment:
+        LANG: "en_US@UTF-8"
+        LANGUAGE: "en_US@UTF-8"
+
+    - name: Configure sssd
+      ini_file:
+        path: /etc/sssd/sssd.conf
+        section: nss
+        option: "{{ item.key }}"
+        value: "{{ item.value }}"
+      loop: "{{ sssd_params | dict2items }}"
+      vars:
+        sssd_params:
+            default_shell: "/bin/bash"
+            case_sensitive: "False"
