@@ -27,7 +27,7 @@ w32tm.exe /config /syncfromflags:manual /manualpeerlist:at.pool.ntp.org,0x8 /rel
 Log-Message "Creating test users"
 foreach ($i in $userCount) {
     $username = "user$i"
-    $password = "UserPassword.$i" | ConvertTo-SecureString -AsPlainText -Force
+    $password = "Us.erPassword.$i" | ConvertTo-SecureString -AsPlainText -Force
     Write-Host "Creating $username"
     New-ADUSer `
         -Name $username `
