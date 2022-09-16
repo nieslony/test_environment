@@ -3,11 +3,17 @@
   become: true
 
   vars_files:
+    - "../config.yml"
     - ipa-vars.yml
 
   vars:
-    ipa_client_packages:
+    ipa_client_packages_centos:
         - "@idm"
+        - openldap-clients
+
+    ipa_client_packages_fedora:
+        - "@domain-client"
+        - openldap-clients
 
   tasks:
     - name: Install Updates
@@ -15,16 +21,22 @@
         name: "*"
         state: latest
 
-    - name: "Install Packages: {{ ipa_client_packages | join(', ') }}"
+    - name: "Install Fedora Packages: {{ ipa_client_packages_fedora | join(', ') }}"
       dnf:
-        name: "{{ ipa_client_packages }}"
+        name: "{{ ipa_client_packages_fedora }}"
+      when: ansible_distribution == "Fedora"
+
+    - name: "Install CentOS Packages: {{ ipa_client_packages_centos | join(', ') }}"
+      dnf:
+        name: "{{ ipa_client_packages_centos }}"
+      when: ansible_distribution == "CentOS"
 
     - name: "Join {{ ipaserver_realm }}"
       command: >
         ipa-client-install
         --unattended
         --principal=admin
-        --password="{{ ipa.admin_password }}"
+        --password={{ ipaadmin_password }}
         --force-join
         --configure-firefox
         --mkhomedir
