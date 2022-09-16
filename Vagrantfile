@@ -18,8 +18,9 @@ Vagrant.configure("2") do |config|
 
         dc01.vm.provider :libvirt do |libvirt|
             libvirt.cpus = 2
-            libvirt.memory = 1024
+            libvirt.memory = 2048
             libvirt.clock_offset = 'localtime'
+            libvirt.graphics_type = 'spice'
         end
 
         dc01.vm.network :private_network,
@@ -78,13 +79,12 @@ Vagrant.configure("2") do |config|
                 inline: "route add default gw 192.168.120.254"
 
         ipa01.vm.provision "shell",
-                        name: "Set locale",
-                        inline: "localectl set-locale en_US@UTF-8"
+                name: "Set locale",
+                inline: "localectl set-locale en_US@UTF-8"
 
-        ipa01.vm.provision "ansible" do |ansible|
-            ansible.playbook = "ansible/ipa01.yml"
-            ansible.config_file = "ansible/ansible.cfg"
-        end
+        ipa01.vm.provision "ansible",
+                playbook: "ansible/ipa01.yml",
+                config_file: "ansible/ansible.cfg"
     end # ipa01
 
     config.vm.define "mail" do |mail|
