@@ -4,7 +4,19 @@ VM_NAME=gw.nieslony.lab
 VM_RAM=512
 VM_DISK_SIZE=8
 
-INSTALL_ISO="$HOME/Downloads/pfSense-CE-2.6.0-RELEASE-amd64.iso"
+DOWNLOAD_URL="https://atxfiles.netgate.com/mirror/downloads/pfSense-CE-2.6.0-RELEASE-amd64.iso.gz"
+INSTALL_ISO="$HOME/Downloads/$( basename -s .gz $DOWNLOAD_URL )"
+
+if [ ! -e $INSTALL_ISO ]; then
+    INSTALL_ISO_GZ="$INSTALL_ISO.gz"
+    if [ ! -e $INSTALL_ISO_GZ ]; then
+        (
+            cd $HOME/Downloads
+            wget $DOWNLOAD_URL
+        )
+    fi
+    gunzip $INSTALL_ISO_GZ
+fi
 
 TMP_ISO=$( mktemp )
 cp -v $INSTALL_ISO $TMP_ISO
