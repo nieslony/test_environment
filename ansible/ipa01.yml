@@ -73,8 +73,12 @@
       args:
         creates: /etc/krb5.keytab
 
-#    - name: Open firewall
-#      firewalld:
+    - name: Get locale
+      command: localectl
+      register: localectl_ret
+
+    - debug:
+        msg: "Locale: {{ localectl_ret.stdout }}"
 
     - name: "Add Windows forward DNS zone"
       ipadnsforwardzone:
@@ -88,6 +92,7 @@
       environment:
         LANG: "en_US@UTF-8"
         LANGUAGE: "en_US@UTF-8"
+        LC_ALL: "C.UTF-8"
 
     - name: "Add Windows forward reverse DNS zone"
       ipadnsforwardzone:
@@ -101,19 +106,21 @@
       environment:
         LANG: "en_US@UTF-8"
         LANGUAGE: "en_US@UTF-8"
+        LC_ALL: "C.UTF-8"
 
     - name: "Create trust to AD"
       ipatrust:
         realm: WINDOWS.LAB
         state: present
         admin: Administrator
-        password: "{{ dc.adminPassword }}"
+        password: "{{ dc.admin_password }}"
         server: dc01.windows.lab
         two_way: false
-        ipaadmin_password: "{{ ipa.admin_password }}"
+        ipaadmin_password: "{{ ipaadmin_password }}"
       environment:
         LANG: "en_US@UTF-8"
         LANGUAGE: "en_US@UTF-8"
+        LC_ALL: "C.UTF-8"
 
     - name: Configure sssd
       ini_file:
