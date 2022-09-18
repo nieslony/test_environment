@@ -1,0 +1,22 @@
+- name: Setup Mailserver
+  hosts: all
+  become: true
+
+  vars:
+    postfix_conf:
+      mydomain: "nieslony.lab"
+      myorign: "$mydomain"
+      myhostname: "{{ inventory_hostname }}"
+      mynetworks: "192.168.110,0/24, 192.168.120.0/24"
+      inet_interfaces: "all"
+
+  roles:
+    - role: rhel-system-roles.postfix
+
+  post_tasks:
+    - name: "Open ports in firewall"
+      firewalld:
+        service: smtp
+        permanent: yes
+        immediate: yes
+        state: enabled

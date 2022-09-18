@@ -91,11 +91,6 @@ Vagrant.configure("2") do |config|
         mail.vm.box = "centos/stream8"
         mail.vm.hostname = "mail.linux.lab"
 
-        mail.vm.provider :libvirt do |libvirt|
-            libvirt.uri = "qemu:///session"
-            libvirt.keymap = "de"
-        end
-
         mail.vm.network :private_network,
                 :libvirt__network_name => "Lab_Linux_Internal",
                 :libvirt__autostart => "true",
@@ -112,6 +107,9 @@ Vagrant.configure("2") do |config|
             ansible.verbose = true
             ansible.config_file = "ansible/ansible.cfg"
         end
+
+        mail.vm.provision :ansible,
+                :playbook => "ansible/mailserver.yml"
     end # mail
 
     config.vm.define "fedora35-01" do |fedora3501|
