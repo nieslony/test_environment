@@ -342,13 +342,25 @@
 		<hideidentity></hideidentity>
 		<hideversion></hideversion>
 		<dnssecstripped></dnssecstripped>
+		<domainoverrides>
+			<domain>linux.lab.</domain>
+			<ip>192.168.120.20</ip>
+			<descr></descr>
+			<tls_hostname></tls_hostname>
+		</domainoverrides>
+		<domainoverrides>
+			<domain>windows.lab.</domain>
+			<ip>192.168.110.20</ip>
+			<descr></descr>
+			<tls_hostname></tls_hostname>
+		</domainoverrides>
 	</unbound>
 	<vlans></vlans>
 	<qinqs></qinqs>
 	<revision>
-		<time>1662544666</time>
-		<description><![CDATA[admin@192.168.110.10 (Local Database): DHCP Server - Settings changed for interface OPT1]]></description>
-		<username><![CDATA[admin@192.168.110.10 (Local Database)]]></username>
+		<time>1663331201</time>
+		<description><![CDATA[admin@192.168.110.1 (Local Database): Domain override configured for DNS Resolver.]]></description>
+		<username><![CDATA[admin@192.168.110.1 (Local Database)]]></username>
 	</revision>
 	<gateways></gateways>
 	<dnsmasq></dnsmasq>
