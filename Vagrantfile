@@ -98,18 +98,18 @@ Vagrant.configure("2") do |config|
 
         mail.vm.provision "ansible" do |ansible|
             ansible.playbook = "ansible/set-proxy.yml"
-            ansible.verbose = true
             ansible.config_file = "ansible/ansible.cfg"
         end
 
         mail.vm.provision "ansible" do |ansible|
             ansible.playbook = "ansible/join-ipa-domain.yml"
-            ansible.verbose = true
             ansible.config_file = "ansible/ansible.cfg"
         end
 
-        mail.vm.provision :ansible,
-                :playbook => "ansible/mailserver.yml"
+        mail.vm.provision "Mailserver",
+                :type => "ansible",
+                :playbook => "ansible/mailserver.yml",
+                :verbose => true
     end # mail
 
     config.vm.define "fedora35-01" do |fedora3501|

@@ -3,17 +3,95 @@
   become: true
 
   vars:
+    certs:
+      postfix: /etc/pki/postfix
+      cyrus: /etc/pki/imap
+
+    krb5_services:
+      smtp: { path: /etc/postfix/krb5.keytab, owner: postfix }
+
+    packages:
+      - python3-urllib-gssapi
+
     postfix_conf:
       mydomain: "nieslony.lab"
       myorign: "$mydomain"
-      myhostname: "{{ inventory_hostname }}"
+      myhostname: "{{ ansible_fqdn }}"
       mynetworks: "192.168.110,0/24, 192.168.120.0/24"
       inet_interfaces: "all"
+      smtpd_tls_cert_file: "{{ certs['postfix']  }}/{{ ansible_fqdn }}.crt"
+      smtpd_tls_key_file: "{{ certs['postfix'] }}/{{ ansible_fqdn }}.key"
+
+  pre_tasks:
+    - name: Enable EPEL
+      dnf:
+        name:
+          - epel-release.noarch
+          - epel-next-release.noarch
+        state: latest
+
+    - name: Install packages
+      dnf:
+        name: "{{ packages }}"
+        state: latest
+
+    - name: Create Certificate Folders
+      file:
+        name: "{{ item.value }}"
+        state: directory
+      loop: "{{ certs | dict2items }}"
+
+    - name: Create Certificates
+      command:
+        cmd: |
+          ipa-getcert request
+            --keyfile {{ item.value }}/{{ ansible_fqdn }}.key
+            --certfile {{ item.value }}/{{ ansible_fqdn }}.crt
+            --key-owner {{ item.key }}
+            --cert-owner {{ item.key }}
+        creates: "{{ item.value }}/{{ ansible_fqdn }}.crt"
+      environment:
+        KRB5_CLIENT_KEYTAB: /etc/krb5.keytab
+      loop: "{{ certs | dict2items }}"
+
+    - name: Create services
+      ipa_service:
+        name: "{{ item.key}}/{{ ansible_fqdn }}"
+        ipa_host: ipa01.linux.lab
+      environment:
+        KRB5_CLIENT_KTNAME: /etc/krb5.keytab
+        https_proxy: ""
+        http_proxy: ""
+      loop: "{{ krb5_services | dict2items }}"
+
+    - name: Get keytabs
+      shell:
+        cmd: |
+          kinit -k
+          ;
+          ipa-getkeytab -p {{ item.key }}/{{ ansible_fqdn }} -k {{ item.value["path"] }}
+          ;
+          kdestroy
+          ;
+        creates: "{{ item.value['path'] }}"
+      loop:  "{{ krb5_services | dict2items }}"
+
+    - name: Change ownership of keytabs
+      file:
+        path: "{{ item.value['path'] }}"
+        owner: "{{ item.value['owner'] }}"
+      loop: "{{ krb5_services | dict2items }}"
 
   roles:
-    - role: rhel-system-roles.postfix
+    - role: linux-system-roles.postfix
 
   post_tasks:
+    - name: Start firewalld
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+
     - name: "Open ports in firewall"
       firewalld:
         service: smtp
