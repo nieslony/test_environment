@@ -91,7 +91,8 @@
 			<subnet>24</subnet>
 		</opt1>
 	</interfaces>
-	<staticroutes></staticroutes>
+	<staticroutes>
+	</staticroutes>
 	<dhcpd>
 		<lan>
 			<enable></enable>
@@ -335,9 +336,8 @@
 	<dnshaper></dnshaper>
 	<unbound>
 		<enable></enable>
-		<dnssec></dnssec>
-		<active_interface></active_interface>
-		<outgoing_interface></outgoing_interface>
+		<active_interface>all</active_interface>
+		<outgoing_interface>all</outgoing_interface>
 		<custom_options></custom_options>
 		<hideidentity></hideidentity>
 		<hideversion></hideversion>
@@ -354,15 +354,20 @@
 			<descr></descr>
 			<tls_hostname></tls_hostname>
 		</domainoverrides>
+		<port></port>
+		<tlsport></tlsport>
+		<sslcertref>6318576d6c9ab</sslcertref>
+		<system_domain_local_zone_type>transparent</system_domain_local_zone_type>
 	</unbound>
 	<vlans></vlans>
 	<qinqs></qinqs>
 	<revision>
-		<time>1663331201</time>
-		<description><![CDATA[admin@192.168.110.1 (Local Database): Domain override configured for DNS Resolver.]]></description>
-		<username><![CDATA[admin@192.168.110.1 (Local Database)]]></username>
+		<time>1663869185</time>
+		<description><![CDATA[admin@192.168.120.1 (Local Database): DNS Resolver configured.]]></description>
+		<username><![CDATA[admin@192.168.120.1 (Local Database)]]></username>
 	</revision>
-	<gateways></gateways>
+	<gateways>
+	</gateways>
 	<dnsmasq></dnsmasq>
 	<ntpd></ntpd>
 	<cert>
