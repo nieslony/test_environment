@@ -63,8 +63,8 @@
         --setup-kra
         --setup-dns
         --setup-adtrust
-        --mkhomedir
         --auto-reverse
+        --mkhomedir
         --no-dnssec-validation
         --ssh-trust-dns
         --no-forwarders
@@ -73,12 +73,35 @@
       args:
         creates: /etc/krb5.keytab
 
-    - name: Get locale
-      command: localectl
-      register: localectl_ret
+    - name: Create MX record
+      ipadnsrecord:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: "@"
+        record_type: MX
+        record_value: "10 mail"
+        zone_name: linux.lab
 
-    - debug:
-        msg: "Locale: {{ localectl_ret.stdout }}"
+    - name: IPA server config
+      ipa_config:
+        ipa_pass: "{{ ipaadmin_password }}"
+        ipa_host: "{{ ansible_fqdn }}"
+        ipadefaultloginshell: /bin/bash
+      environment:
+        http_proxy: ""
+        https_proxy: ""
+
+    - name: Create Users
+      ipauser:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: "{{ item.name }}"
+        givenname: "{{ item.givenname }}"
+        sn: "{{ item.sn }}"
+        email:
+          - "{{ item.email }}"
+        password: UserPassword.1
+      loop:
+        - { name: mustermann, givenname: "Max", sn: "Mustermann", email: "max.mustermann@{{ maildomain }}" }
+        - { name: rossi, givenname: "Mario", sn: "Rossi", email: "mario.rossi@{{ maildomain }}" }
 
     - name: "Add Windows forward DNS zone"
       ipadnsforwardzone:
