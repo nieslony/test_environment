@@ -1,0 +1,18 @@
+- name: Mail Roles
+  hosts: all
+  become: yes
+
+  pre_tasks:
+    - name: Enable PowerTools
+      command: "dnf config-manager --set-enabled powertools"
+
+    - name: Enble EPEL
+      dnf:
+        name:
+          - epel-next-release
+          - epel-release
+        state: latest
+
+  roles:
+    - default-packages
+    - mailserver
