@@ -1,0 +1,6 @@
+- name: Apply Workstation Roles
+  hosts: all
+  become: true
+
+  roles:
+    - thunderbird
