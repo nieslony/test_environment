@@ -82,13 +82,17 @@ Vagrant.configure("2") do |config|
                 name: "Set locale",
                 inline: "localectl set-locale en_US@UTF-8"
 
-        ipa01.vm.provision "ansible",
+        ipa01.vm.provision "Setup IPA",
+                type: "ansible",
                 playbook: "ansible/ipa01.yml",
-                config_file: "ansible/ansible.cfg"
+                config_file: "ansible/ansible.cfg",
+                extra_vars: {
+                        maildomain: global_config["global_domain"]
+                        }
     end # ipa01
 
     config.vm.define "mail" do |mail|
-        mail.vm.box = "centos/stream8"
+        mail.vm.box = "generic/centos9s"
         mail.vm.hostname = "mail.linux.lab"
 
         mail.vm.network :private_network,
@@ -106,10 +110,15 @@ Vagrant.configure("2") do |config|
             ansible.config_file = "ansible/ansible.cfg"
         end
 
-        mail.vm.provision "Mailserver",
+        mail.vm.provision "Mailserver Roles",
                 :type => "ansible",
-                :playbook => "ansible/mailserver.yml",
-                :verbose => true
+                :playbook => "ansible/mail-roles.yml",
+                :verbose => false,
+                :config_file => "ansible/ansible.cfg",
+                :extra_vars => {
+                        maildomain: global_config["global_domain"]
+                        }
+
     end # mail
 
     config.vm.define "fedora35-01" do |fedora3501|
@@ -136,7 +145,8 @@ Vagrant.configure("2") do |config|
                 verbose: true,
                 config_file: "ansible/ansible.cfg"
 
-        fedora3501.vm.provision "ansible",
+        fedora3501.vm.provision "Join IPA domain",
+                type: "ansible",
                 playbook: "ansible/join-ipa-domain.yml",
                 config_file: "ansible/ansible.cfg"
     end # fedora35-01
@@ -160,13 +170,19 @@ Vagrant.configure("2") do |config|
                 name: "Setup network",
                 path: "ansible/network.sh"
 
-        fedora3601.vm.provision "ansible",
+        fedora3601.vm.provision "Workstation Basic",
+                type: "ansible",
                 playbook: "ansible/fedora-ws.yml",
-                verbose: true,
                 config_file: "ansible/ansible.cfg"
 
-        fedora3601.vm.provision "ansible",
+        fedora3601.vm.provision "Join IPA domain",
+                type: "ansible",
                 playbook: "ansible/join-ipa-domain.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fedora3601.vm.provision "Apply roles",
+                type: "ansible",
+                playbook: "ansible/ws_roles.yml",
                 config_file: "ansible/ansible.cfg"
     end # fedora36-01
 
