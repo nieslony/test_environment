@@ -91,8 +91,7 @@
 			<subnet>24</subnet>
 		</opt1>
 	</interfaces>
-	<staticroutes>
-	</staticroutes>
+	<staticroutes></staticroutes>
 	<dhcpd>
 		<lan>
 			<enable></enable>
@@ -354,6 +353,18 @@
 			<descr></descr>
 			<tls_hostname></tls_hostname>
 		</domainoverrides>
+		<domainoverrides>
+			<domain>120.168.192.in-addr.arpa</domain>
+			<ip>192.168.120.20</ip>
+			<descr></descr>
+			<tls_hostname></tls_hostname>
+		</domainoverrides>
+		<domainoverrides>
+			<domain>110.168.192.in-addr.arpa</domain>
+			<ip>192.168.110.10</ip>
+			<descr></descr>
+			<tls_hostname></tls_hostname>
+		</domainoverrides>
 		<port></port>
 		<tlsport></tlsport>
 		<sslcertref>6318576d6c9ab</sslcertref>
@@ -362,12 +373,11 @@
 	<vlans></vlans>
 	<qinqs></qinqs>
 	<revision>
-		<time>1663869185</time>
-		<description><![CDATA[admin@192.168.120.1 (Local Database): DNS Resolver configured.]]></description>
+		<time>1664635119</time>
+		<description><![CDATA[admin@192.168.120.1 (Local Database): Domain override configured for DNS Resolver.]]></description>
 		<username><![CDATA[admin@192.168.120.1 (Local Database)]]></username>
 	</revision>
-	<gateways>
-	</gateways>
+	<gateways></gateways>
 	<dnsmasq></dnsmasq>
 	<ntpd></ntpd>
 	<cert>
