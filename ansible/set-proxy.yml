@@ -40,46 +40,6 @@
     proxy: "http://192.168.122.1:3128"
 
   tasks:
-    - name: "Enable proxy {{ proxy }} in dnf.conf"
-      ini_file:
-        path: /etc/dnf/dnf.conf
-        section: main
-        option: proxy
-        value: "{{ proxy }}"
-
-    - name: Configure Fedora repos
-      block:
-        - name: Set dl.fedoraproject.org as source
-          replace:
-            path: "/etc/yum.repos.d/{{ item }}"
-            regexp: '^#baseurl\=http://download.example/(.*)'
-            replace: 'baseurl=http://dl.fedoraproject.org/\1'
-          loop: "{{ fedora_repos }}"
-
-        - name: Disable metalinks
-          replace:
-            path: "/etc/yum.repos.d/{{ item }}"
-            regexp: '^metalink\=(.*)'
-            replace: '#metalink=\1'
-          loop: "{{ fedora_repos }}"
-      when:  ansible_facts['distribution'] == 'Fedora'
-
-    - name: Configure CentOS repos
-      block:
-        - name: Disable mirrorlist
-          replace:
-            path: "/etc/yum.repos.d/{{ item }}"
-            regexp: '^mirrorlist\=(.*)'
-            replace: '#mirrorlist=\1'
-          loop: "{{ centos_stream_repos }}"
-        - name: Enable baseurl
-          replace:
-            path: "/etc/yum.repos.d/{{ item }}"
-            regexp: '^#baseurl\=(.*)'
-            replace: 'baseurl=\1'
-          loop: "{{ centos_stream_repos }}"
-      when:  ansible_facts['distribution'] == 'CentOS'
-
     - name: "Install required packages: {{ required_packages | join(', ') }}"
       dnf:
         name: "{{ required_packages }}"
