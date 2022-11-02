@@ -100,20 +100,18 @@ Vagrant.configure("2") do |config|
                 :libvirt__autostart => "true",
                 :libvirt__forward_mode => "route"
 
-        mail.vm.provision "ansible" do |ansible|
-            ansible.playbook = "ansible/set-proxy.yml"
-            ansible.config_file = "ansible/ansible.cfg"
-        end
+        mail.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
 
-        mail.vm.provision "ansible" do |ansible|
-            ansible.playbook = "ansible/join-ipa-domain.yml"
-            ansible.config_file = "ansible/ansible.cfg"
-        end
+        mail.vm.provision "Join IPA Domain",
+                :type => "ansible" ,
+                :playbook => "ansible/join-ipa-domain.yml",
+                :config_file => "ansible/ansible.cfg"
 
         mail.vm.provision "Mailserver Roles",
                 :type => "ansible",
                 :playbook => "ansible/mail-roles.yml",
-                :verbose => false,
                 :config_file => "ansible/ansible.cfg",
                 :extra_vars => {
                         maildomain: global_config["global_domain"]
