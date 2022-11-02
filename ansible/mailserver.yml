@@ -1,4 +1,4 @@
-- name: Setup Mailserver
+- name: Mailserver
   hosts: all
   become: true
 
@@ -12,17 +12,34 @@
 
     packages:
       - python3-urllib-gssapi
+      - mailx
+      - postfix
 
     postfix_conf:
       mydomain: "nieslony.lab"
-      myorign: "$mydomain"
       myhostname: "{{ ansible_fqdn }}"
+      myorign: "$mydomain"
+      mydestination: "$mydomain $myhostname"
       mynetworks: "192.168.110,0/24, 192.168.120.0/24"
       inet_interfaces: "all"
       smtpd_tls_cert_file: "{{ certs['postfix']  }}/{{ ansible_fqdn }}.crt"
       smtpd_tls_key_file: "{{ certs['postfix'] }}/{{ ansible_fqdn }}.key"
+      smtpd_tls_CAfile: "/etc/ipa/ca.crt"
+      smtpd_recipient_restrictions: >
+        sleep 1,
+        reject_unauth_pipelining,
+        reject_rbl_client zen.spamhaus.org,
+        reject_non_fqdn_recipient,
+        reject_invalid_helo_hostname,
+        reject_unknown_recipient_domain,
+        reject_unauth_destination,
+        permit
+    smtpd_sender_restrictions: >
+        reject_sender_login_mismatch,
+        permit_sasl_authenticated,
+    permit
 
-  pre_tasks:
+  tasks:
     - name: Enable EPEL
       dnf:
         name:
@@ -68,11 +85,8 @@
       shell:
         cmd: |
           kinit -k
-          ;
           ipa-getkeytab -p {{ item.key }}/{{ ansible_fqdn }} -k {{ item.value["path"] }}
-          ;
           kdestroy
-          ;
         creates: "{{ item.value['path'] }}"
       loop:  "{{ krb5_services | dict2items }}"
 
@@ -82,10 +96,31 @@
         owner: "{{ item.value['owner'] }}"
       loop: "{{ krb5_services | dict2items }}"
 
-  roles:
-    - role: linux-system-roles.postfix
+    - name: Make checksum of old main.cf
+      command:
+        cmd: "sha256sum /etc/postfix/main.cf"
+      register: checksum_main_cf_old
+      changed_when: no
 
-  post_tasks:
+    - name: Configure postfix
+      command:
+        cmd: "postconf -e '{{ item.key }}={{ item.value }}'"
+      loop: "{{ postfix_conf | dict2items }}"
+      changed_when: no
+
+    - name: Make checksum of old main.cf
+      command:
+        cmd: "sha256sum /etc/postfix/main.cf"
+      register: checksum_main_cf_new
+      changed_when: checksum_main_cf_old.stdout != checksum_main_cf_old.stdout
+      notify: restart_postfix
+
+    - name: Start postfix
+      service:
+        name: postfix
+        state: started
+        enabled: yes
+
     - name: Start firewalld
       service:
         name: firewalld
@@ -98,3 +133,10 @@
         permanent: yes
         immediate: yes
         state: enabled
+
+  handlers:
+    - name: Restart postfix
+      service:
+        name: postfix
+        state: restarted
+      listen: restart_postfix

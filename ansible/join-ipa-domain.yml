@@ -7,12 +7,16 @@
     - ipa-vars.yml
 
   vars:
-    ipa_client_packages_centos:
+    ipa_client_packages_centos8:
         - "@idm"
         - openldap-clients
 
     ipa_client_packages_fedora:
         - "@domain-client"
+        - openldap-clients
+
+    ipa_client_packages_centos9:
+        - ipa-client
         - openldap-clients
 
   tasks:
@@ -26,10 +30,15 @@
         name: "{{ ipa_client_packages_fedora }}"
       when: ansible_distribution == "Fedora"
 
-    - name: "Install CentOS Packages: {{ ipa_client_packages_centos | join(', ') }}"
+    - name: "Install CentOS 8 Packages: {{ ipa_client_packages_centos8 | join(', ') }}"
       dnf:
-        name: "{{ ipa_client_packages_centos }}"
-      when: ansible_distribution == "CentOS"
+        name: "{{ ipa_client_packages_centos8 }}"
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "8"
+
+    - name: "Install CentOS 9 Packages: {{ ipa_client_packages_centos9 | join(', ') }}"
+      dnf:
+        name: "{{ ipa_client_packages_centos9 }}"
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "9"
 
     - name: "Join {{ ipaserver_realm }}"
       command: >
