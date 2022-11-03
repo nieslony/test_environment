@@ -1,5 +1,6 @@
 require 'yaml'
 
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 current_dir = File.dirname(File.expand_path(__FILE__))
 global_config = YAML.load_file("#{current_dir}/config.yml")
 
@@ -10,18 +11,28 @@ Vagrant.configure("2") do |config|
     config.proxy.https = global_config["proxy_url"]
     config.timezone.value = :host
 
+    config.vm.provider :libvirt do |libvirt|
+        libvirt.cpus = 2
+        libvirt.memory = 2048
+        libvirt.clock_offset = 'localtime'
+        libvirt.graphics_type = 'spice'
+        libvirt.keymap = "de"
+        libvirt.channel :type => 'unix',
+            :target_name => 'org.qemu.guest_agent.0',
+            :target_type => 'virtio'
+        libvirt.channel :type => 'spicevmc',
+            :target_name => 'com.redhat.spice.0',
+            :target_type => 'virtio'
+        libvirt.video_type = "qxl"
+        libvirt.input :type => "mouse",
+            :bus => "usb"
+    end
+
     config.vm.define "dc01" do |dc01|
         dc01.vm.box = "win2022"
         dc01.vm.guest = "windows"
         dc01.vm.hostname = "dc01"
         dc01.vm.communicator = "winrm"
-
-        dc01.vm.provider :libvirt do |libvirt|
-            libvirt.cpus = 2
-            libvirt.memory = 2048
-            libvirt.clock_offset = 'localtime'
-            libvirt.graphics_type = 'spice'
-        end
 
         dc01.vm.network :private_network,
                 :network_name => "Lab_Windows_Internal",
@@ -54,13 +65,6 @@ Vagrant.configure("2") do |config|
         ipa01.vm.box = "centos/stream8"
         ipa01.vm.hostname = "ipa01.linux.lab"
 
-        ipa01.vm.provider :libvirt do |libvirt|
-            libvirt.cpus = 2
-            libvirt.memory = 2048
-            libvirt.keymap = "de"
-        end
-
-#                :libvirt__network_name => "Lab_Linux_Internal",
         ipa01.vm.network :private_network,
                 :dev => "virbr3",
                 :libvirt__autostart => "true",
@@ -116,7 +120,6 @@ Vagrant.configure("2") do |config|
                 :extra_vars => {
                         maildomain: global_config["global_domain"]
                         }
-
     end # mail
 
     config.vm.define "fedora35-01" do |fedora3501|
@@ -124,9 +127,7 @@ Vagrant.configure("2") do |config|
         fedora3501.vm.hostname = "fedora35-01.linux.lab"
 
         fedora3501.vm.provider :libvirt do |libvirt|
-            libvirt.cpus = 2
             libvirt.memory = 4096
-            libvirt.keymap = "de"
         end
 
         fedora3501.vm.network :private_network,
@@ -154,9 +155,7 @@ Vagrant.configure("2") do |config|
         fedora3601.vm.hostname = "fedora36-01.linux.lab"
 
         fedora3601.vm.provider :libvirt do |libvirt|
-            libvirt.cpus = 2
             libvirt.memory = 4096
-            libvirt.keymap = "de"
         end
 
         fedora3601.vm.network :private_network,
@@ -189,9 +188,7 @@ Vagrant.configure("2") do |config|
         webserver.vm.hostname = "webserver.linux.lab"
 
         webserver.vm.provider :libvirt do |libvirt|
-            libvirt.cpus = 2
             libvirt.memory = 1024
-            libvirt.keymap = "de"
         end
 
         webserver.vm.network :private_network,
