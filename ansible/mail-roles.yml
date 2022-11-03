@@ -2,6 +2,12 @@
   hosts: all
   become: yes
 
+  vars:
+    repo_whitelist:
+        - centos.repo
+        - epel-next.rep
+        - epel.repo
+
   pre_tasks:
     - name: Enable PowerTools
       command: "dnf config-manager --set-enabled powertools"
