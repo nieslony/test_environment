@@ -60,7 +60,7 @@
         path: /etc/sssd/sssd.conf
         section: nss
         option: "{{ item.key }}"
-        value: "{{ item.value }}"
+        value: "{{ item.value | string }}"
       loop: "{{ sssd_params | dict2items }}"
       vars:
         sssd_params:
