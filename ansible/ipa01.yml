@@ -103,6 +103,28 @@
         - { name: mustermann, givenname: "Max", sn: "Mustermann", email: "max.mustermann@{{ maildomain }}" }
         - { name: rossi, givenname: "Mario", sn: "Rossi", email: "mario.rossi@{{ maildomain }}" }
 
+    - name: "Add DNS zone test.lab"
+      ipadnszone:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: test.lab
+        allow_sync_ptr: yes
+        dynamic_update: true
+      environment:
+        LANG: "en_US@UTF-8"
+        LANGUAGE: "en_US@UTF-8"
+        LC_ALL: "C.UTF-8"
+
+    - name: "Add DNS entries"
+      ipadnsrecord:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        zone_name: test.lab
+        name: "{{ item.name }}"
+        record_type: "{{ item.type }}"
+        record_value: "{{ item.value }}"
+      loop:
+        - { name: autoconfig, type: CNAME, value: mail.linux.lab. }
+        - { name: gw, type: A, value: "192.168.120.254" }
+
     - name: "Add Windows forward DNS zone"
       ipadnsforwardzone:
         ipaadmin_password: "{{ ipaadmin_password }}"
