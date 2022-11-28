@@ -99,6 +99,11 @@ Vagrant.configure("2") do |config|
         mail.vm.box = "generic/centos9s"
         mail.vm.hostname = "mail.linux.lab"
 
+        mail.vm.provider :libvirt do |libvirt|
+            libvirt.memory = 4096
+            libvirt.cpus = 2
+        end
+
         mail.vm.network :private_network,
                 :libvirt__network_name => "Lab_Linux_Internal",
                 :libvirt__autostart => "true",
@@ -118,7 +123,8 @@ Vagrant.configure("2") do |config|
                 :playbook => "ansible/mail-roles.yml",
                 :config_file => "ansible/ansible.cfg",
                 :extra_vars => {
-                        maildomain: global_config["global_domain"]
+                        maildomain: global_config["global_domain"],
+                        ipaadmin_password: global_config["ipa"]["admin_password"]
                         }
     end # mail
 
@@ -182,6 +188,39 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/ws_roles.yml",
                 config_file: "ansible/ansible.cfg"
     end # fedora36-01
+
+    config.vm.define "fedora37-01" do |fedora3701|
+        fedora3701.vm.box = "fedora/37-cloud-base"
+        fedora3701.vm.hostname = "fedora37-01.linux.lab"
+
+        fedora3701.vm.provider :libvirt do |libvirt|
+            libvirt.memory = 4096
+        end
+
+        fedora3701.vm.network :private_network,
+                :libvirt__network_name => "Lab_Linux_Internal",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        fedora3701.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        fedora3701.vm.provision "Workstation Basic",
+                type: "ansible",
+                playbook: "ansible/fedora-ws.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fedora3701.vm.provision "Join IPA domain",
+                type: "ansible",
+                playbook: "ansible/join-ipa-domain.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fedora3701.vm.provision "Apply roles",
+                type: "ansible",
+                playbook: "ansible/ws_roles.yml",
+                config_file: "ansible/ansible.cfg"
+    end # fedora37-01
 
     config.vm.define "webserver" do |webserver|
         webserver.vm.box = "centos/stream8"
