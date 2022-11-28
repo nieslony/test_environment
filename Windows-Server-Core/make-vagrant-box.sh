@@ -11,6 +11,19 @@ function log {
     eval echo ${msg:0:${cols}}
 }
 
+function cleanup {
+    log Cleanup
+    if [ -e "$IMAGE" ]; then
+        rm -vf $IMAGE
+    fi
+    if [ -d "$TMP_DIR" ]; then
+        rm -rvf $TMP_DIR
+    fi
+    log Cleanup done.
+}
+
+trap cleanup EXIT
+
 log Check Image
 IMAGE="$( virsh vol-path --pool default --vol $VM_NAME.qcow2 )"
 if [ ! -e "$IMAGE" ]; then
@@ -89,7 +102,11 @@ tar \
     | pigz > $BOX_FILE || exit 1
 
 log Removing existing box $BOX_NAME
-vagrant box remove $BOX_NAME
+if grep -q $( vagrant box list | grep $BOX_NAME ) ; then
+    vagrant box remove $BOX_NAME || exit 1
+else
+    echo "There's no box $BOX_NAME to remove"
+fi
 
 log Creating new box $BOX_NAME
 vagrant box add --name $BOX_NAME $BOX_FILE || exit 1
