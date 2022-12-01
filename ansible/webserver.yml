@@ -1,35 +1,29 @@
-- name: Webserver
+- name: Mail Roles
   hosts: all
-  become: true
+  become: yes
 
   vars:
-    packages:
-      - httpd
-      - mod_auth_gssapi
-      - mod_security
-      - mod_session
-      - mod_ssl
+    repo_whitelist:
+        - centos.repo
+        - epel-next.repo
+        - epel.repo
 
-  tasks:
-    - name: Install Updates
-      dnf:
-        name: "*"
-        state: latest
+  pre_tasks:
+    - name: Enable PowerTools
+      command: "dnf config-manager --set-enabled powertools"
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "8"
 
-    - name: Install epel
+    - name: Enable CRB
+      command: "dnf config-manager --set-enabled crb"
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "9"
+
+    - name: Enble EPEL
       dnf:
         name:
-          - epel-release
           - epel-next-release
+          - epel-release
         state: latest
 
-    - name: "Install packages: {{ packages | join(', ') }}"
-      dnf:
-        name: "{{ packages }}"
-        state: latest
-
-    - name: Start Apache
-      service:
-        name: htttpd
-        status: started
-        enabled: yes
+  roles:
+    - default-packages
+    - webserver

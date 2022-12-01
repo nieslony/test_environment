@@ -5,8 +5,12 @@
   vars:
     repo_whitelist:
         - centos.repo
-        - epel-next.rep
+        - epel-next.repo
         - epel.repo
+    vhosts:
+        - "cloud.{{ mydomain }}"
+        - "webmail.{{ mydomain }}"
+        - "autoconfig.{{ mydomain }}"
 
   pre_tasks:
     - name: Enable PowerTools
@@ -26,4 +30,5 @@
 
   roles:
     - default-packages
+    - webserver
     - mailserver
