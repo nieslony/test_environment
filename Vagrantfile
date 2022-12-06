@@ -15,7 +15,7 @@ Vagrant.configure("2") do |config|
     config.vm.provider :libvirt do |libvirt|
         libvirt.cpus = 2
         libvirt.memory = 2048
-        libvirt.clock_offset = 'localtime'
+        libvirt.clock_offset = 'utc'
         libvirt.graphics_type = 'spice'
         libvirt.keymap = "de"
         libvirt.channel :type => 'unix',
@@ -34,6 +34,10 @@ Vagrant.configure("2") do |config|
         dc01.vm.guest = "windows"
         dc01.vm.hostname = "dc01"
         dc01.vm.communicator = "winrm"
+
+        dc01.vm.provider :libvirt do |libvirt|
+                libvirt.clock_offset = 'localtime'
+        end
 
         dc01.vm.network :private_network,
                 :network_name => "Lab_Windows_Internal",
@@ -87,6 +91,11 @@ Vagrant.configure("2") do |config|
                 name: "Set locale",
                 inline: "localectl set-locale en_US@UTF-8"
 
+        ipa01.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
         ipa01.vm.provision "Setup IPA",
                 type: "ansible",
                 playbook: "ansible/ipa01.yml",
@@ -113,6 +122,11 @@ Vagrant.configure("2") do |config|
         mail.vm.provision "shell",
                 name: "Setup network",
                 path: "ansible/network.sh"
+
+        mail.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
 
         mail.vm.provision "Join IPA Domain",
                 :type => "ansible" ,
@@ -146,6 +160,11 @@ Vagrant.configure("2") do |config|
                 name: "Setup network",
                 path: "ansible/network.sh"
 
+        fedora3501.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
         fedora3501.vm.provision "ansible",
                 playbook: "ansible/fedora-ws.yml",
                 verbose: true,
@@ -173,6 +192,11 @@ Vagrant.configure("2") do |config|
         fedora3601.vm.provision "shell",
                 name: "Setup network",
                 path: "ansible/network.sh"
+
+        fedora3601.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
 
         fedora3601.vm.provision "Workstation Basic",
                 type: "ansible",
@@ -207,6 +231,11 @@ Vagrant.configure("2") do |config|
                 name: "Setup network",
                 path: "ansible/network.sh"
 
+        fedora3701.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
         fedora3701.vm.provision "Workstation Basic",
                 type: "ansible",
                 playbook: "ansible/fedora-ws.yml",
@@ -239,6 +268,11 @@ Vagrant.configure("2") do |config|
         webserver.vm.provision "shell",
                 name: "Setup network",
                 path: "ansible/network.sh"
+
+        webserver.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
 
         webserver.vm.provision "ansible",
                 playbook: "ansible/join-ipa-domain.yml",
