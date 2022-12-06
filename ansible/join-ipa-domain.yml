@@ -75,6 +75,9 @@
         section: libdefaults
         option: dns_canonicalize_hostname
         value: "true"
+
+    - name: Write current time into RTC
+      command: hwclock --utc --systohc
   handlers:
     - name: Restart SSSD
       service:

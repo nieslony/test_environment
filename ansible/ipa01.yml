@@ -178,3 +178,6 @@
         sssd_params:
             default_shell: "/bin/bash"
             case_sensitive: "False"
+
+    - name: Write current time into RTC
+      command: hwclock --utc --systohc
