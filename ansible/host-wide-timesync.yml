@@ -1,0 +1,32 @@
+- name: Sync with RTC on host
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install chrony
+      dnf:
+        name: chrony
+        state: latest
+
+    - name: Load kernel module ptp_kvm on system boot
+      lineinfile:
+        path: /etc/modules-load.d/ptp_kvm.conf
+        line: ptp_kvm
+        create: yes
+
+    - name: Load kernel module ptp_kvm now
+      modprobe:
+        name: ptp_kvm
+
+    - name: Sync chrony from host clock
+      lineinfile:
+        path: /etc/chrony.conf
+        line: refclock PHC /dev/ptp0 poll 2
+      notify: restart_chrony
+
+  handlers:
+    - name: Restart chrony
+      service:
+        name: chronyd
+        state: restarted
+      listen: restart_chrony
