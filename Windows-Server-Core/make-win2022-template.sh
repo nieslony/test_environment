@@ -194,7 +194,7 @@ tar \
     | pigz > $BOX_FILE || exit 1
 
 log Removing existing box $BOX_NAME
-if grep -q $( vagrant box list | | awk -v box_name=$BOX_NAME '$0~box_name { print $1; }' ) ; then
+if vagrant box list | grep -Eq "^$BOX_NAME " ; then
     vagrant box remove $BOX_NAME || exit 1
 else
     echo "There's no box $BOX_NAME to remove"
