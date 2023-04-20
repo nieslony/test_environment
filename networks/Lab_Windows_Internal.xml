@@ -1,15 +1,6 @@
-<!--
-WARNING: THIS IS AN AUTO-GENERATED FILE. CHANGES TO IT ARE LIKELY TO BE
-OVERWRITTEN AND LOST. Changes to this xml configuration should be made using:
-  virsh net-edit Lab_Windows_Internal
-or other application using the libvirt API.
--->
-
 <network>
   <name>Lab_Windows_Internal</name>
-  <uuid>e708b5ec-bb3e-4eec-a7f2-da1579005bf1</uuid>
-  <bridge name='virbr2' stp='on' delay='0'/>
-  <mac address='52:54:00:27:fb:37'/>
+  <bridge stp='on' delay='0'/>
   <domain name='Lab_Windows_Internal' localOnly='yes'/>
   <dns>
     <host ip='192.168.110.1'>
