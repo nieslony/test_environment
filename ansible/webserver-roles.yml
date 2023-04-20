@@ -1,0 +1,29 @@
+- name: Webserver Roles
+  hosts: all
+  become: yes
+
+  vars:
+    repo_whitelist:
+        - centos.repo
+        - epel-next.repo
+        - epel.repo
+
+  pre_tasks:
+    - name: Enable PowerTools
+      command: "dnf config-manager --set-enabled powertools"
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "8"
+
+    - name: Enable CRB
+      command: "dnf config-manager --set-enabled crb"
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "9"
+
+    - name: Enble EPEL
+      dnf:
+        name:
+          - epel-next-release
+          - epel-release
+        state: latest
+
+  roles:
+    - default-packages
+    - webserver

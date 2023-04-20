@@ -9,6 +9,7 @@ Vagrant.configure("2") do |config|
 
     config.proxy.http = global_config["proxy_url"]
     config.proxy.https = global_config["proxy_url"]
+    config.proxy.no_proxy = ".linux.lab"
     config.timezone.value = :host
 
     config.vm.provider :libvirt do |libvirt|
@@ -16,6 +17,8 @@ Vagrant.configure("2") do |config|
         libvirt.memory = 2048
         libvirt.clock_offset = 'localtime'
         libvirt.graphics_type = 'spice'
+        libvirt.graphics_ip = "0.0.0.0"
+        libvirt.graphics_port = -1
         libvirt.keymap = "de"
         libvirt.channel :type => 'unix',
             :target_name => 'org.qemu.guest_agent.0',
@@ -62,7 +65,7 @@ Vagrant.configure("2") do |config|
     end # dc01
 
     config.vm.define "ipa01" do |ipa01|
-        ipa01.vm.box = "centos/stream8"
+        ipa01.vm.box = "generic/centos9s"
         ipa01.vm.hostname = "ipa01.linux.lab"
 
         ipa01.vm.network :private_network,
@@ -72,6 +75,13 @@ Vagrant.configure("2") do |config|
                 :ip => "192.168.120.20",
                 :netmask => "255.255.255.0",
                 :hostname => true
+
+        ipa01.vm.provision "Disable IPv6",
+                type: "shell",
+                reboot: true,
+                inline: <<-'SHELL'
+                sed -i 's/net.ipv6.conf.all.disable_ipv6\s*=.*//' /etc/sysctl.conf
+                SHELL
 
         ipa01.vm.provision "shell",
                 name: "Install net-tools",
@@ -128,69 +138,41 @@ Vagrant.configure("2") do |config|
                         }
     end # mail
 
-    config.vm.define "fedora35-01" do |fedora3501|
-        fedora3501.vm.box = "fedora/35-cloud-base"
-        fedora3501.vm.hostname = "fedora35-01.linux.lab"
+    config.vm.define "fedora38-01" do |fedora3801|
+        fedora3801.vm.box = "generic/fedora38"
+        fedora3801.vm.hostname = "fedora38-01.linux.lab"
 
-        fedora3501.vm.provider :libvirt do |libvirt|
+        fedora3801.vm.provider :libvirt do |libvirt|
             libvirt.memory = 4096
         end
 
-        fedora3501.vm.network :private_network,
+        fedora3801.vm.network :private_network,
                 :libvirt__network_name => "Lab_Linux_Internal",
                 :libvirt__autostart => "true",
                 :libvirt__forward_mode => "route"
 
-        fedora3501.vm.provision "shell",
+        fedora3801.vm.provision "shell",
                 name: "Setup network",
                 path: "ansible/network.sh"
 
-        fedora3501.vm.provision "ansible",
-                playbook: "ansible/fedora-ws.yml",
-                verbose: true,
-                config_file: "ansible/ansible.cfg"
-
-        fedora3501.vm.provision "Join IPA domain",
-                type: "ansible",
-                playbook: "ansible/join-ipa-domain.yml",
-                config_file: "ansible/ansible.cfg"
-    end # fedora35-01
-
-    config.vm.define "fedora36-01" do |fedora3601|
-        fedora3601.vm.box = "fedora/36-cloud-base"
-        fedora3601.vm.hostname = "fedora36-01.linux.lab"
-
-        fedora3601.vm.provider :libvirt do |libvirt|
-            libvirt.memory = 4096
-        end
-
-        fedora3601.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
-
-        fedora3601.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
-        fedora3601.vm.provision "Workstation Basic",
+        fedora3801.vm.provision "Workstation Basic",
                 type: "ansible",
                 playbook: "ansible/fedora-ws.yml",
                 config_file: "ansible/ansible.cfg"
 
-        fedora3601.vm.provision "Join IPA domain",
+        fedora3801.vm.provision "Join IPA domain",
                 type: "ansible",
                 playbook: "ansible/join-ipa-domain.yml",
                 config_file: "ansible/ansible.cfg"
 
-        fedora3601.vm.provision "Apply roles",
+        fedora3801.vm.provision "Apply roles",
                 type: "ansible",
                 playbook: "ansible/ws_roles.yml",
                 config_file: "ansible/ansible.cfg"
-    end # fedora36-01
+    end # fedora38-01
 
     config.vm.define "fedora37-01" do |fedora3701|
-        fedora3701.vm.box = "fedora/37-cloud-base"
+        fedora3701.vm.box = "generic/fedora37"
         fedora3701.vm.hostname = "fedora37-01.linux.lab"
 
         fedora3701.vm.provider :libvirt do |libvirt|
@@ -223,7 +205,7 @@ Vagrant.configure("2") do |config|
     end # fedora37-01
 
     config.vm.define "webserver" do |webserver|
-        webserver.vm.box = "centos/stream8"
+        webserver.vm.box = "generic/centos9s"
         webserver.vm.hostname = "webserver.linux.lab"
 
         webserver.vm.provider :libvirt do |libvirt|
@@ -243,8 +225,9 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/join-ipa-domain.yml",
                 config_file: "ansible/ansible.cfg"
 
-        webserver.vm.provision "ansible",
-                playbook: "ansible/webserver.yml",
+        webserver.vm.provision "Apply roles",
+                type: "ansible",
+                playbook: "ansible/webserver-roles.yml",
                 config_file: "ansible/ansible.cfg"
     end # webserver
 end
