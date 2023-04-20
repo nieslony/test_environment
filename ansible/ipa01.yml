@@ -178,7 +178,7 @@
             default_shell: "/bin/bash"
             case_sensitive: "False"
 
-    - name. Configure firewall
+    - name: Configure firewall
       firewalld:
         service: "{{ item }}"
         permanent: true
