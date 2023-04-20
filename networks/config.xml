@@ -365,6 +365,12 @@
 			<descr></descr>
 			<tls_hostname></tls_hostname>
 		</domainoverrides>
+		<domainoverrides>
+			<domain>test.lab.</domain>
+			<ip>192.168.120.20</ip>
+			<descr></descr>
+			<tls_hostname></tls_hostname>
+		</domainoverrides>
 		<port></port>
 		<tlsport></tlsport>
 		<sslcertref>6318576d6c9ab</sslcertref>
@@ -373,9 +379,9 @@
 	<vlans></vlans>
 	<qinqs></qinqs>
 	<revision>
-		<time>1664635119</time>
-		<description><![CDATA[admin@192.168.120.1 (Local Database): Domain override configured for DNS Resolver.]]></description>
-		<username><![CDATA[admin@192.168.120.1 (Local Database)]]></username>
+		<time>1669642131</time>
+		<description><![CDATA[admin@192.168.120.64 (Local Database): Domain override configured for DNS Resolver.]]></description>
+		<username><![CDATA[admin@192.168.120.64 (Local Database)]]></username>
 	</revision>
 	<gateways></gateways>
 	<dnsmasq></dnsmasq>
