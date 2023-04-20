@@ -252,6 +252,37 @@ Vagrant.configure("2") do |config|
                 config_file: "ansible/ansible.cfg"
     end # fedora37-01
 
+    config.vm.define "fileserver" do |fileserver|
+        fileserver.vm.box = "generic/centos9s"
+        fileserver.vm.hostname = "fileserver.linux.lab"
+
+        fileserver.vm.provider :libvirt do |libvirt|
+            libvirt.memory = 1024
+        end
+
+        fileserver.vm.network :private_network,
+                :libvirt__network_name => "Lab_Linux_Internal",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        fileserver.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        fileserver.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fileserver.vm.provision "ansible",
+                playbook: "ansible/join-ipa-domain.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fileserver.vm.provision "ansible",
+                playbook: "ansible/fileserver.yml",
+                config_file: "ansible/ansible.cfg"
+    end # fileserver
+
     config.vm.define "webserver" do |webserver|
         webserver.vm.box = "generic/centos9s"
         webserver.vm.hostname = "webserver.linux.lab"
