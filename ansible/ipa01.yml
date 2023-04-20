@@ -8,9 +8,12 @@
 
   vars:
     ipa_server_packages:
-        - "@idm:DL1/server"
-        - "@idm:DL1/adtrust"
-        - "@idm:DL1/dns"
+        - "ipa-server"
+        - "ipa-server-dns"
+        - "ipa-server-trust-ad"
+
+  environment:
+    LC_ALL: "C.UTF-8"
 
   tasks:
     - debug:
@@ -35,14 +38,10 @@
         name: "*"
         state: latest
 
-    - name: "Install module idm"
-      dnf:
-        name: "@idm:DL1"
-        state: latest
-
-    - name: "Install more idm modules"
+    - name: "Install IPA packages"
       dnf:
         name: "{{ ipa_server_packages }}"
+        state: latest
 
     - name: "Remove {{ ansible_fqdn }} from /etc/hosts"
       lineinfile:
@@ -178,3 +177,13 @@
         sssd_params:
             default_shell: "/bin/bash"
             case_sensitive: "False"
+
+    - name. Configure firewall
+      firewalld:
+        service: "{{ item }}"
+        permanent: true
+        state: enabled
+      loop:
+        - freeipa-4
+        - freeipa-trust
+        - dns
