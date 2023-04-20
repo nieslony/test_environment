@@ -5,7 +5,7 @@
   vars:
     repo_whitelist:
         - centos.repo
-        - epel-next.rep
+        - epel-next.repo
         - epel.repo
 
   pre_tasks:
