@@ -43,3 +43,6 @@ done
 
 echo "Remove management IP from /etc/resolv.conf"
 sed -i 's/.*192.168.121.*//' /etc/resolv.conf
+
+echo Copy proxy config from yum.conf to dnf.conf
+grep proxy /etc/yum.conf >> /etc/dnf/dnf.conf
