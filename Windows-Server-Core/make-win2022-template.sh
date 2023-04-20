@@ -144,7 +144,7 @@ cat <<EOF > $METADATA_FILE
 {
     "provider": "libvirt",
     "format": "qcow2",
-    "virtual_size": $VIRTUAL_SIZE
+    "virtual_size": $VIRTUAL_DISK_SIZE
 }
 EOF
 
@@ -196,6 +196,7 @@ tar \
 log Removing existing box $BOX_NAME
 if vagrant box list | grep -Eq "^$BOX_NAME " ; then
     vagrant box remove $BOX_NAME || exit 1
+    virsh vol-delete --pool default --vol $VM_NAME.qcow2
 else
     echo "There's no box $BOX_NAME to remove"
 fi
