@@ -159,7 +159,7 @@
         admin: Administrator
         password: "{{ dc.admin_password }}"
         server: dc01.windows.lab
-        two_way: false
+        two_way: true
         ipaadmin_password: "{{ ipaadmin_password }}"
       environment:
         LANG: "en_US@UTF-8"
@@ -187,3 +187,6 @@
         - freeipa-4
         - freeipa-trust
         - dns
+
+    - name: Write current time into RTC
+      command: hwclock --utc --systohc

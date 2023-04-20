@@ -9,13 +9,13 @@ Vagrant.configure("2") do |config|
 
     config.proxy.http = global_config["proxy_url"]
     config.proxy.https = global_config["proxy_url"]
-    config.proxy.no_proxy = ".linux.lab"
+    config.proxy.no_proxy = "localhost,127.0.0.1,.lab"
     config.timezone.value = :host
 
     config.vm.provider :libvirt do |libvirt|
         libvirt.cpus = 2
         libvirt.memory = 2048
-        libvirt.clock_offset = 'localtime'
+        libvirt.clock_offset = 'utc'
         libvirt.graphics_type = 'spice'
         libvirt.graphics_ip = "0.0.0.0"
         libvirt.graphics_port = -1
@@ -36,6 +36,10 @@ Vagrant.configure("2") do |config|
         dc01.vm.guest = "windows"
         dc01.vm.hostname = "dc01"
         dc01.vm.communicator = "winrm"
+
+        dc01.vm.provider :libvirt do |libvirt|
+                libvirt.clock_offset = 'localtime'
+        end
 
         dc01.vm.network :private_network,
                 :network_name => "Lab_Windows_Internal",
@@ -96,6 +100,11 @@ Vagrant.configure("2") do |config|
                 name: "Set locale",
                 inline: "localectl set-locale en_US@UTF-8"
 
+        ipa01.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
         ipa01.vm.provision "Setup IPA",
                 type: "ansible",
                 playbook: "ansible/ipa01.yml",
@@ -122,6 +131,11 @@ Vagrant.configure("2") do |config|
         mail.vm.provision "shell",
                 name: "Setup network",
                 path: "ansible/network.sh"
+
+        mail.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
 
         mail.vm.provision "Join IPA Domain",
                 :type => "ansible" ,
@@ -188,6 +202,11 @@ Vagrant.configure("2") do |config|
                 name: "Setup network",
                 path: "ansible/network.sh"
 
+        fedora3701.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
         fedora3701.vm.provision "Workstation Basic",
                 type: "ansible",
                 playbook: "ansible/fedora-ws.yml",
@@ -203,6 +222,37 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/ws_roles.yml",
                 config_file: "ansible/ansible.cfg"
     end # fedora37-01
+
+    config.vm.define "fileserver" do |fileserver|
+        fileserver.vm.box = "generic/centos9s"
+        fileserver.vm.hostname = "fileserver.linux.lab"
+
+        fileserver.vm.provider :libvirt do |libvirt|
+            libvirt.memory = 1024
+        end
+
+        fileserver.vm.network :private_network,
+                :libvirt__network_name => "Lab_Linux_Internal",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        fileserver.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        fileserver.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fileserver.vm.provision "ansible",
+                playbook: "ansible/join-ipa-domain.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fileserver.vm.provision "ansible",
+                playbook: "ansible/fileserver.yml",
+                config_file: "ansible/ansible.cfg"
+    end # fileserver
 
     config.vm.define "webserver" do |webserver|
         webserver.vm.box = "generic/centos9s"
@@ -220,6 +270,11 @@ Vagrant.configure("2") do |config|
         webserver.vm.provision "shell",
                 name: "Setup network",
                 path: "ansible/network.sh"
+
+        webserver.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
 
         webserver.vm.provision "ansible",
                 playbook: "ansible/join-ipa-domain.yml",

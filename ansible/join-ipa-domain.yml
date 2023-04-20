@@ -69,6 +69,15 @@
       notify:
         - Restart SSSD
 
+    - name: Canocalize hostname
+      ini_file:
+        path: /etc/krb5.conf
+        section: libdefaults
+        option: dns_canonicalize_hostname
+        value: "true"
+
+    - name: Write current time into RTC
+      command: hwclock --utc --systohc
   handlers:
     - name: Restart SSSD
       service:

@@ -33,6 +33,7 @@ virt-install \
     --memory $VM_RAM \
     --memballoon virtio \
     --graphics keymap=de \
+    --clock offset=utc \
     --channel type=unix,target.name=org.qemu.guest_agent.0,target.type=virtio \
     --channel type=spicevmc,target.name=com.redhat.spice.0,target.type=virtio \
 
