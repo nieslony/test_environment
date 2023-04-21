@@ -78,6 +78,7 @@
 
     - name: Write current time into RTC
       command: hwclock --utc --systohc
+
   handlers:
     - name: Restart SSSD
       service:
