@@ -245,7 +245,8 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/host-wide-timesync.yml",
                 config_file: "ansible/ansible.cfg"
 
-        fileserver.vm.provision "ansible",
+        fileserver.vm.provision "Join Domain",
+                type: "ansible",
                 playbook: "ansible/join-ipa-domain.yml",
                 config_file: "ansible/ansible.cfg"
 
@@ -276,7 +277,8 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/host-wide-timesync.yml",
                 config_file: "ansible/ansible.cfg"
 
-        webserver.vm.provision "ansible",
+        webserver.vm.provision "Join Domain",
+                type: "ansible",
                 playbook: "ansible/join-ipa-domain.yml",
                 config_file: "ansible/ansible.cfg"
 
