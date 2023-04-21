@@ -16,9 +16,6 @@
     LC_ALL: "C.UTF-8"
 
   tasks:
-    - debug:
-        msg: "{{ lookup('ansible.builtin.env') }}"
-
     - name: Configure internel network interface
       shell: |
         ip a
@@ -29,6 +26,7 @@
         nmcli connection down Lab_Linux_Internal
         nmcli connection up Lab_Linux_Internal
         nmcli con sh
+        systemctl restart NetworkManager
         ip a
       register: nmcli
       when: false
@@ -49,6 +47,12 @@
         regexp: "^127.*{{ ansible_fqdn }}"
         state: absent
 
+    - name: "Add local IP to /etc/hosts"
+      lineinfile:
+        path: /etc/hosts
+        regexp: "^192.168.120.20\\s*{{ ansible_fqdn }}"
+        line: "192.168.120.20 {{ ansible_fqdn }}"
+
     - name: "Setup IPA"
       command: >
         ipa-server-install
@@ -62,6 +66,7 @@
         --setup-kra
         --setup-dns
         --setup-adtrust
+        --allow-zone-overlap
         --auto-reverse
         --mkhomedir
         --no-dnssec-validation
@@ -71,6 +76,17 @@
         --ip-address=192.168.120.20
       args:
         creates: /etc/krb5.keytab
+
+    - name: Configure firewall
+      firewalld:
+        service: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop:
+        - freeipa-4
+        - freeipa-trust
+        - dns
 
     - name: Create MX record
       ipadnsrecord:
@@ -177,16 +193,6 @@
         sssd_params:
             default_shell: "/bin/bash"
             case_sensitive: "False"
-
-    - name: Configure firewall
-      firewalld:
-        service: "{{ item }}"
-        permanent: true
-        state: enabled
-      loop:
-        - freeipa-4
-        - freeipa-trust
-        - dns
 
     - name: Write current time into RTC
       command: hwclock --utc --systohc
