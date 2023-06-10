@@ -2,9 +2,9 @@
   hosts: all
   become: true
 
-  vars_files:
-    - "../config.yml"
-    - ipa-vars.yml
+  # vars_files:
+  #   - "{{ '.' | realpath }}/../config.yml"
+  #   - ipa-vars.yml
 
   vars:
     ipa_client_packages_centos8:
@@ -20,6 +20,16 @@
         - openldap-clients
 
   tasks:
+    - set_fact:
+        playbook_path: "{{ (lookup('file', '/proc/self/cmdline') | regex_replace('\u0000',' ')).split() | select('match','^.*[.]ya?ml$') | list | first }}"
+
+    - set_fact:
+        real_playbook_dir: "{{ playbook_path | realpath | dirname }}"
+
+    - include_vars: "{{ real_playbook_dir }}/../config.yml"
+
+    - include_vars: "{{ real_playbook_dir }}/ipa-vars.yml"
+
     - name: Install Updates
       dnf:
         name: "*"
