@@ -5,7 +5,13 @@ current_dir = File.dirname(File.expand_path(__FILE__))
 global_config = YAML.load_file("#{current_dir}/config.yml")
 
 Vagrant.configure("2") do |config|
-    config.vagrant.plugins = [ "vagrant-libvirt", "vagrant-proxyconf", "vagrant-timezone" ]
+    config.vagrant.plugins = [
+            "vagrant-libvirt",
+            "vagrant-proxyconf",
+            "vagrant-timezone",
+            "winrm",
+            "winrm-elevated"
+    ]
 
     config.proxy.http = global_config["proxy_url"]
     config.proxy.https = global_config["proxy_url"]
