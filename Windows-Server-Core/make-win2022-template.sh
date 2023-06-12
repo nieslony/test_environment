@@ -72,16 +72,20 @@ function cleanup_tmp_template_files {
 }
 
 function cleanup_tmp_box_files {
-    log "Cleanup box TMP files from"
+    log "Cleanup box TMP files"
     if [ -e "$TMPL_IMAGE" ]; then
         rm -vf $TMPL_IMAGE
     fi
     if [ -d "$VAGRANT_TMP_DIR" ]; then
         rm -rvf "$VAGRANT_TMP_DIR"
     fi
+    if [ -e "$INSTALL_ISO_TMP" ]; then
+        rm -vf "$INSTALL_ISO_TMP"
+    fi
 }
 
 function on_exit {
+    log Cleanup on exit
     cleanup_template
     cleanup_tmp_box_files
 }
@@ -117,7 +121,7 @@ virt-install \
     --cdrom "$INSTALL_ISO_TMP" \
     --disk path="$DRIVER_ISO",device=cdrom \
     --disk path="$CONFIG_ISO",device=cdrom \
-    --osinfo win2k22 2> /dev/null || exit 1
+    --osinfo win2k22 || exit 1
 
 cleanup_tmp_template_files
 
@@ -125,7 +129,6 @@ log Check Image
 TMPL_IMAGE="$( virsh vol-path --pool default --vol $VM_NAME.qcow2 )"
 if [ ! -e "$TMPL_IMAGE" ]; then
     echo "Image $TMPL_IMAGE does not exit"
-    exit 1
 fi
 
 if [ ! -r "$TMPL_IMAGE" ]; then
