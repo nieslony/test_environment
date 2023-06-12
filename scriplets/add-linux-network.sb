@@ -1,4 +1,4 @@
-hostname = "#{hostname}.linux.lab"
+hostname = "#{hostname.split(".")[0]}.linux.lab"
 config.vm.network :private_network,
         :libvirt__network_name => "Lab_Linux_Internal",
         :libvirt__autostart => "true",
