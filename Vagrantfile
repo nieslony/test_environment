@@ -159,7 +159,7 @@ Vagrant.configure("2") do |config|
     end # mail
 
     config.vm.define "fedora38-01" do |fedora3801|
-        fedora3801.vm.box = "generic/fedora38"
+        fedora3801.vm.box = "fedora/38-cloud-base"
         fedora3801.vm.hostname = "fedora38-01.linux.lab"
 
         fedora3801.vm.provider :libvirt do |libvirt|
