@@ -293,4 +293,37 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/webserver-roles.yml",
                 config_file: "ansible/ansible.cfg"
     end # webserver
+
+    config.vm.define "printserver" do |printserver|
+        printserver.vm.box = "generic/centos9s"
+        printserver.vm.hostname = "printserver.linux.lab"
+
+        printserver.vm.provider :libvirt do |libvirt|
+            libvirt.memory = 1024
+        end
+
+        printserver.vm.network :private_network,
+                :libvirt__network_name => "Lab_Linux_Internal",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        printserver.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        printserver.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
+        printserver.vm.provision "Join Domain",
+                type: "ansible",
+                playbook: "ansible/join-ipa-domain.yml",
+                config_file: "ansible/ansible.cfg"
+
+        printserver.vm.provision "Apply roles",
+                type: "ansible",
+                playbook: "ansible/printserver-roles.yml",
+                config_file: "ansible/ansible.cfg"
+    end # printserver
 end
