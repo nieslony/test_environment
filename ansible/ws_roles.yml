@@ -6,7 +6,10 @@
     trusted_uris: [".linux.lab", ".test.lab"]
     delegation_uris: ["cloud.test.lab"]
     managed_bookmarks:
-        - { "name": "Nextcloud", "url": "http://cloud.test.lab"}
+        - name: "Nextcloud"
+          url: "https://cloud.test.lab"
+        - name: "Printserver"
+          url: "https://printserver.linux.lab:631"
 
   roles:
     - evolution
