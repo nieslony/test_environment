@@ -41,8 +41,13 @@ for uuid in $( nmcli --field UUID con show | grep -v UUID ) ; do
         fi
 done
 
+echo "Remove IPv6 entries from /etc/hosts"
+sed -i '/^.*::.*$/d' /etc/hosts
+
 echo "Remove management IP from /etc/resolv.conf"
-sed -i 's/.*192.168.121.*//' /etc/resolv.conf
+if grep -q "192.168.120.*" /etc/resolv.conf ; then
+        sed -i 's/.*192.168.121.*//' /etc/resolv.conf
+fi
 
 echo Copy proxy config from yum.conf to dnf.conf
 grep proxy /etc/yum.conf >> /etc/dnf/dnf.conf
