@@ -86,16 +86,27 @@ Vagrant.configure("2") do |config|
                 :netmask => "255.255.255.0",
                 :hostname => true
 
-        ipa01.vm.provision "Disable IPv6",
-                type: "shell",
-                reboot: true,
-                inline: <<-'SHELL'
-                sed -i 's/net.ipv6.conf.all.disable_ipv6\s*=.*//' /etc/sysctl.conf
-                SHELL
+        # ipa01.vm.provision "Disable IPv6",
+        #         type: "shell",
+        #         reboot: true,
+        #         inline: <<-'SHELL'
+        #         cat <<EOF > /etc/sysctl.d/10-ni-ipv6.conf
+        #         net.ipv6.conf.all.disable_ipv6 = 1
+        #         net.ipv6.conf.default.disable_ipv6 = 1
+        #         net.ipv6.conf.lo.disable_ipv6 = 1
+        #         EOF
+        #         SHELL
 
         ipa01.vm.provision "shell",
-                name: "Install net-tools",
-                inline: "dnf install -y net-tools"
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        ipa01.vm.provision "shell",
+                name: "Enable IPv6 for lo",
+                inline: <<-'SHELL'
+                sysctl -w net.ipv6.conf.lo.disable_ipv6=0
+                echo "net.ipv6.conf.lo.disable_ipv6 = 0" > /etc/sysctl.d/10-ipv6.conf
+                SHELL
 
         ipa01.vm.provision "shell",
                 name: "Add default route",
@@ -159,7 +170,7 @@ Vagrant.configure("2") do |config|
     end # mail
 
     config.vm.define "fedora38-01" do |fedora3801|
-        fedora3801.vm.box = "fedora/38-cloud-base"
+        fedora3801.vm.box = "generic/fedora38"
         fedora3801.vm.hostname = "fedora38-01.linux.lab"
 
         fedora3801.vm.provider :libvirt do |libvirt|
