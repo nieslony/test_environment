@@ -16,27 +16,12 @@
     LC_ALL: "C.UTF-8"
 
   tasks:
-    - name: Configure internel network interface
-      shell: |
-        ip a
-        nmcli connection modify Lab_Linux_Internal \
-            ipv4.method manual \
-            ipv4.addresses 192.168.120.20/24 \
-            ipv4.gateway 192.168.120.254 \
-        nmcli connection down Lab_Linux_Internal
-        nmcli connection up Lab_Linux_Internal
-        nmcli con sh
-        systemctl restart NetworkManager
-        ip a
-      register: nmcli
-      when: false
-
     - name: "Install Updates"
       dnf:
         name: "*"
         state: latest
 
-    - name: "Install IPA packages"
+    - name: "Install IPA packages: {{ ipa_server_packages | join(', ') }}"
       dnf:
         name: "{{ ipa_server_packages }}"
         state: latest
