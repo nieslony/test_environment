@@ -49,5 +49,8 @@ if grep -q "192.168.120.*" /etc/resolv.conf ; then
         sed -i 's/.*192.168.121.*//' /etc/resolv.conf
 fi
 
+echo "Removing entries like 127.0.0.1 $HOSTNAME from /etc/hosts"
+sed -i "/127.0.[0-9]*.1.*$HOSTNAME.*/d" /etc/hosts
+
 echo Copy proxy config from yum.conf to dnf.conf
 grep proxy /etc/yum.conf >> /etc/dnf/dnf.conf
