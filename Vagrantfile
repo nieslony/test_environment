@@ -302,7 +302,11 @@ Vagrant.configure("2") do |config|
         webserver.vm.provision "Apply roles",
                 type: "ansible",
                 playbook: "ansible/webserver-roles.yml",
-                config_file: "ansible/ansible.cfg"
+                config_file: "ansible/ansible.cfg",
+                extra_vars: {
+                        ipaadmin_password: global_config["ipa"]["admin_password"],
+                        vhosts: [ "www.test.lab", "www.linux.lab" ]
+                        }
     end # webserver
 
     config.vm.define "printserver" do |printserver|
@@ -337,4 +341,40 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/printserver-roles.yml",
                 config_file: "ansible/ansible.cfg"
     end # printserver
+
+    config.vm.define "gerbera" do |gerbera|
+        gerbera.vm.box = "generic/centos9s"
+        gerbera.vm.hostname = "gerbera.linux.lab"
+
+        gerbera.vm.provider :libvirt do |libvirt|
+            libvirt.storage :file, :size => '30G'
+        end
+
+        gerbera.vm.network :private_network,
+                :libvirt__network_name => "Lab_Linux_Internal",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        gerbera.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        gerbera.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
+        gerbera.vm.provision "Join Domain",
+                type: "ansible",
+                playbook: "ansible/join-ipa-domain.yml",
+                config_file: "ansible/ansible.cfg"
+
+        gerbera.vm.provision "Apply roles",
+                type: "ansible",
+                playbook: "ansible/gerbera-roles.yml",
+                config_file: "ansible/ansible.cfg",
+                extra_vars: {
+                        ipaadmin_password: global_config["ipa"]["admin_password"],
+                        }
+    end # gerbera
 end
