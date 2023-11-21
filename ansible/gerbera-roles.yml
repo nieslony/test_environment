@@ -1,0 +1,54 @@
+- name: Gerbera Roles
+  hosts: all
+  become: yes
+
+  vars:
+    repo_whitelist:
+        - centos.repo
+        - epel-next.repo
+        - epel.repo
+
+  pre_tasks:
+    - name: Enable PowerTools
+      command: "dnf config-manager --set-enabled powertools"
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "8"
+
+    - name: Enable CRB
+      command: "dnf config-manager --set-enabled crb"
+      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "9"
+
+    - name: Enble EPEL
+      dnf:
+        name:
+          - epel-next-release
+          - epel-release
+        state: latest
+
+    - name: Create /dev/vdb1
+      parted:
+        device: /dev/vdb
+        label: msdos
+        number: 1
+        fs_type: ext4
+        state: present
+        part_end: 100%
+        part_start: 0%
+
+    - name: Extend system volume group
+      lvg:
+        vg: centos9s
+        pvs: /dev/vda2,/dev/vdb1
+
+    - name: Create group media-editors
+      ipa_group:
+        name: media-editors
+        ipa_pass: "{{ ipaadmin_password }}"
+      environment:
+        http_proxy: ""
+        https_proxy: ""
+
+  roles:
+    - default-packages
+    - webserver
+    - gerbera
+    - fileserver
