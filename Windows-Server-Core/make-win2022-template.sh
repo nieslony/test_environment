@@ -11,10 +11,18 @@ BOX_NAME="win2022"
 VM_NAME="$BOX_NAME-tmpl"
 VM_RAM="2048"
 VM_DISK_SIZE="32"
+if [ ! -e "../config.yml" ]; then
+    cat <<EOF
+Fatal: ../config.yml not found
+
+Please create a copy of config.yml.template and modify the varaiables.
+EOF
+    exit 1
+fi
 ADMIN_PASSWORD="$( shyaml get-value dc.admin_password < ../config.yml )"
 
 INSTALL_ISO="$HOME/Downloads/SERVER_EVAL_x64FRE_en-us.iso"
-# https://go.microsoft.com/fwlink/p/?LinkID=2195280&clcid=0x409&culture=en-us&country=US
+INSTALL_URL="https://go.microsoft.com/fwlink/p/?LinkID=2195280&clcid=0x409&culture=en-us&country=US"
 DRIVER_ISO="/usr/share/virtio-win/virtio-win.iso"
 
 CONFIG_ISO="$( mktemp -u /tmp/config_XXXXXX.iso )"
@@ -93,6 +101,11 @@ function on_exit {
 trap on_exit EXIT
 
 cleanup_template
+
+if [ ! -e "$INSTALL_ISO" ]; then
+	log "Downloading $INSTALL_ISO"
+	wget "$INSTALL_URL" -O "$INSTALL_ISO"
+fi
 
 log "Copy Installer CD to $INSTALL_ISO_TMP"
 cp -v $INSTALL_ISO $INSTALL_ISO_TMP
