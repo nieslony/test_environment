@@ -10,8 +10,14 @@
           url: "https://cloud.test.lab"
         - name: "Printserver"
           url: "https://printserver.linux.lab:631"
+    skip_repo_backup: true
+    commercial_packages: []
+    gui_rpm_packages_fedora:
+        - sddm
+        - dolphin
 
   roles:
+    - gui
     - evolution
     - firefox
     - thunderbird
