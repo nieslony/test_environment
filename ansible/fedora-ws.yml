@@ -8,7 +8,6 @@
   vars:
     fedora_packages:
         - "@workstation-product-environment"
-        - python3-networkmanager
         - python3-gobject-base
         - telnet
         - spice-vdagent

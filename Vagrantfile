@@ -169,6 +169,39 @@ Vagrant.configure("2") do |config|
                         }
     end # mail
 
+    config.vm.define "fedora39-01" do |fedora3901|
+        fedora3901.vm.box = "generic/fedora39"
+        fedora3901.vm.hostname = "fedora39-01.linux.lab"
+
+        fedora3901.vm.provider :libvirt do |libvirt|
+            libvirt.memory = 4096
+        end
+
+        fedora3901.vm.network :private_network,
+                :libvirt__network_name => "Lab_Linux_Internal",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        fedora3901.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        fedora3901.vm.provision "Workstation Basic",
+                type: "ansible",
+                playbook: "ansible/fedora-ws.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fedora3901.vm.provision "Join IPA domain",
+                type: "ansible",
+                playbook: "ansible/join-ipa-domain.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fedora3901.vm.provision "Apply roles",
+                type: "ansible",
+                playbook: "ansible/ws_roles.yml",
+                config_file: "ansible/ansible.cfg"
+    end # fedora39-01
+
     config.vm.define "fedora38-01" do |fedora3801|
         fedora3801.vm.box = "generic/fedora38"
         fedora3801.vm.hostname = "fedora38-01.linux.lab"
@@ -201,44 +234,6 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/ws_roles.yml",
                 config_file: "ansible/ansible.cfg"
     end # fedora38-01
-
-    config.vm.define "fedora37-01" do |fedora3701|
-        fedora3701.vm.box = "generic/fedora37"
-        fedora3701.vm.hostname = "fedora37-01.linux.lab"
-
-        fedora3701.vm.provider :libvirt do |libvirt|
-            libvirt.memory = 4096
-        end
-
-        fedora3701.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
-
-        fedora3701.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
-        fedora3701.vm.provision "Sync with RTC on host",
-                type: "ansible",
-                playbook: "ansible/host-wide-timesync.yml",
-                config_file: "ansible/ansible.cfg"
-
-        fedora3701.vm.provision "Workstation Basic",
-                type: "ansible",
-                playbook: "ansible/fedora-ws.yml",
-                config_file: "ansible/ansible.cfg"
-
-        fedora3701.vm.provision "Join IPA domain",
-                type: "ansible",
-                playbook: "ansible/join-ipa-domain.yml",
-                config_file: "ansible/ansible.cfg"
-
-        fedora3701.vm.provision "Apply roles",
-                type: "ansible",
-                playbook: "ansible/ws_roles.yml",
-                config_file: "ansible/ansible.cfg"
-    end # fedora37-01
 
     config.vm.define "fileserver" do |fileserver|
         fileserver.vm.box = "generic/centos9s"
