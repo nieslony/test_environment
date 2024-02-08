@@ -17,6 +17,7 @@
     gui_rpm_packages_fedora:
         - sddm
         - dolphin
+    print_server: printserver.linux.lab
 
   roles:
     - gui
@@ -24,3 +25,8 @@
     - firefox
     - thunderbird
     - thunderbird
+    - autofs
+
+  post_tasks:
+    - name: "Reboot"
+      reboot:

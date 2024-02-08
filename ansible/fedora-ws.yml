@@ -8,6 +8,8 @@
   vars:
     fedora_packages:
         - "@workstation-product-environment"
+        - "@kde-desktop-environment"
+        - "@gnome-desktop"
         - python3-gobject-base
         - telnet
         - spice-vdagent
