@@ -9,6 +9,16 @@
         - epel.repo
 
   pre_tasks:
+    - set_fact:
+        playbook_path: "{{ (lookup('file', '/proc/self/cmdline') | regex_replace('\u0000',' ')).split() | select('match','^.*[.]ya?ml$') | list | first }}"
+
+    - set_fact:
+        real_playbook_dir: "{{ playbook_path | realpath | dirname }}"
+
+    - include_vars: "{{ real_playbook_dir }}/../config.yml"
+
+    - include_vars: "{{ real_playbook_dir }}/ipa-vars.yml"
+
     - name: Enable PowerTools
       command: "dnf config-manager --set-enabled powertools"
       when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "8"
