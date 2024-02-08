@@ -103,6 +103,20 @@
         - { name: mustermann, givenname: "Max", sn: "Mustermann", email: "max.mustermann@{{ maildomain }}" }
         - { name: rossi, givenname: "Mario", sn: "Rossi", email: "mario.rossi@{{ maildomain }}" }
 
+    - name: "Create autofs map auto.data"
+      ipaautomountmap:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: auto.data
+        location: default
+
+    - name: "Add key auto.data to map auto.master"
+      ipaautomountkey:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        location: default
+        mapname: auto.master
+        key: "/data"
+        info: auto.data
+
     - name: "Add DNS zone test.lab"
       ipadnszone:
         ipaadmin_password: "{{ ipaadmin_password }}"
