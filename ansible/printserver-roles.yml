@@ -38,6 +38,11 @@
           - epel-release
         state: latest
 
+    - name: "Find group printer-admins"
+      command: "getent group printer-admins"
+      register: group_printer_admins
+      changed_when: no
+
     - name: "Create group printer-admins"
       ipa_group:
         name: printer-admins
@@ -45,6 +50,7 @@
         user:
             - rossi
         ipa_pass: "{{ ipaadmin_password }}"
+      when: group_printer_admins | length == 0
 
   roles:
     - default-packages
