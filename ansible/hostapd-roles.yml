@@ -1,0 +1,25 @@
+- name: "Hostapd roles"
+  hosts: all
+  become: yes
+
+  pre_tasks:
+    - name: "Install elrepo"
+      dnf:
+        name: "https://elrepo.org/linux/kernel/el9/x86_64/RPMS/elrepo-release-9.1-1.el9.elrepo.noarch.rpm"
+        state: present
+        disable_gpg_check: yes
+
+    - name: "Enable repo elrepo-kernel"
+      ini_file:
+        path: /etc/yum.repos.d/elrepo.repo
+        section: elrepo-kernel
+        option: enabled
+        value: 1
+
+    - name: "Install packages"
+      dnf:
+        name: usbutils
+        state: present
+
+  roles:
+    - hostapd

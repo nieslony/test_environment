@@ -4,6 +4,22 @@ ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 current_dir = File.dirname(File.expand_path(__FILE__))
 global_config = YAML.load_file("#{current_dir}/config.yml")
 
+wifi_nix_usb_bus = "invalid"
+wifi_nix_usb_dev = "invalid"
+Dir.glob("/sys/bus/usb/devices/*").each do |dir|
+        if File.exist?(dir + "/product") and File.read(dir + "/product").start_with?("802.11")
+                File.readlines(dir + "/uevent").each do |line|
+                        value = line.split("=")[1].strip.gsub(/^0*/, "")
+                        case line.split("=")[0]
+                        when "BUSNUM"
+                                wifi_nix_usb_bus = value
+                        when "DEVNUM"
+                                wifi_nix_usb_dev = value
+                        end
+                end
+        end
+end
+
 Vagrant.configure("2") do |config|
     config.vagrant.plugins = [
             "vagrant-libvirt",
@@ -325,6 +341,39 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/printserver-roles.yml",
                 config_file: "ansible/ansible.cfg"
     end # printserver
+
+    config.vm.define "accesspoint" do |accesspoint|
+        accesspoint.vm.box = "generic/centos9s"
+        accesspoint.vm.hostname = "accesspoint.linux.lab"
+
+        accesspoint.vm.provider :libvirt do |libvirt|
+                libvirt.usb :bus => wifi_nix_usb_bus, :device => wifi_nix_usb_dev
+        end
+
+        accesspoint.vm.network :private_network,
+                :libvirt__network_name => "Lab_Linux_Internal",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        accesspoint.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        accesspoint.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
+        accesspoint.vm.provision "Join Domain",
+                type: "ansible",
+                playbook: "ansible/join-ipa-domain.yml",
+                config_file: "ansible/ansible.cfg"
+
+        accesspoint.vm.provision "Apply roles",
+                type: "ansible",
+                playbook: "ansible/hostapd-roles.yml",
+                config_file: "ansible/ansible.cfg"
+    end # accesspoint
 
     config.vm.define "gerbera" do |gerbera|
         gerbera.vm.box = "generic/centos9s"
