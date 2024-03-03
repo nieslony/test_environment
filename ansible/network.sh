@@ -52,5 +52,9 @@ fi
 echo "Removing entries like 127.0.0.1 $HOSTNAME from /etc/hosts"
 sed -i "/127.0.[0-9]*.1.*$HOSTNAME.*/d" /etc/hosts
 
-echo Copy proxy config from yum.conf to dnf.conf
-grep proxy /etc/yum.conf >> /etc/dnf/dnf.conf
+if [ "$(realpath /etc/yum.conf)" != "$(realpath /etc/dnf/dnf.conf)" ]; then
+        echo Copy proxy config from yum.conf to dnf.conf
+        grep proxy /etc/yum.conf >> /etc/dnf/dnf.conf
+else
+        echo /etc/yum.conf and /etc/dnf/dnf.conf are the same file, no action
+fi
