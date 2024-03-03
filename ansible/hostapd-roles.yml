@@ -1,0 +1,6 @@
+- name: Mail Roles
+  hosts: all
+  become: yes
+
+  roles:
+    - hostapd

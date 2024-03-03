@@ -337,6 +337,21 @@ Vagrant.configure("2") do |config|
                 config_file: "ansible/ansible.cfg"
     end # printserver
 
+    config.vm.define "accesspoint" do |accesspoint|
+        accesspoint.vm.box = "generic/centos9s"
+        accesspoint.vm.hostname = "accesspoint.linux.lab"
+
+        accesspoint.vm.network :private_network,
+                :libvirt__network_name => "Lab_Linux_Internal",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        accesspoint.vm.provision "Apply roles",
+                type: "ansible",
+                playbook: "ansible/hostapd-roles.yml",
+                config_file: "ansible/ansible.cfg"
+    end # accesspoint
+
     config.vm.define "gerbera" do |gerbera|
         gerbera.vm.box = "generic/centos9s"
         gerbera.vm.hostname = "gerbera.linux.lab"
