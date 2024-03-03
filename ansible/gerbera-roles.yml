@@ -49,6 +49,5 @@
 
   roles:
     - default-packages
-    - webserver
-    - gerbera
+    - minidlna
     - fileserver
