@@ -86,17 +86,6 @@ Vagrant.configure("2") do |config|
                 :netmask => "255.255.255.0",
                 :hostname => true
 
-        # ipa01.vm.provision "Disable IPv6",
-        #         type: "shell",
-        #         reboot: true,
-        #         inline: <<-'SHELL'
-        #         cat <<EOF > /etc/sysctl.d/10-ni-ipv6.conf
-        #         net.ipv6.conf.all.disable_ipv6 = 1
-        #         net.ipv6.conf.default.disable_ipv6 = 1
-        #         net.ipv6.conf.lo.disable_ipv6 = 1
-        #         EOF
-        #         SHELL
-
         ipa01.vm.provision "shell",
                 name: "Setup network",
                 path: "ansible/network.sh"
@@ -372,4 +361,36 @@ Vagrant.configure("2") do |config|
                         ipaadmin_password: global_config["ipa"]["admin_password"],
                         }
     end # gerbera
+
+    config.vm.define "remote_host" do |remote_host|
+        remote_host.vm.box = "generic/centos9s"
+        remote_host.vm.hostname = "remote-host.test.lab"
+
+        remote_host.vm.provider :libvirt do |libvirt|
+            libvirt.memory = 1024
+        end
+
+        remote_host.vm.network :private_network,
+                :libvirt__network_name => "Lab_Internet",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        remote_host.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        remote_host.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
+        remote_host.vm.provision "shell",
+                name: "Install OpenVPN",
+                inline: <<-'SHELL'
+                dnf -y update
+                dnf install -y epel-release
+                dnf -y install openvpn
+                SHELL
+
+    end # remote_host
 end
