@@ -19,6 +19,18 @@
         - dolphin
     print_server: printserver.linux.lab
 
+
+    file_bookmarks:
+        - name: "Music on Fileserver"
+          url: "file:///data/music"
+          icon: "folder-remote-nfs"
+        - name: "Videos on Fileserver"
+          url: "file:///data/videos"
+          icon: "folder-remote-nfs"
+        - name: "Data on fileserver"
+          url: "file:///data/data"
+          icon: "folder-remote-nfs"
+
   roles:
     - gui
     - evolution
