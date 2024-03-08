@@ -102,6 +102,7 @@
       loop:
         - { name: mustermann, givenname: "Max", sn: "Mustermann", email: "max.mustermann@{{ maildomain }}" }
         - { name: rossi, givenname: "Mario", sn: "Rossi", email: "mario.rossi@{{ maildomain }}" }
+        - { name: doe, givenname: "John", sn: "Doe", email: "john.doe@{{ maildomain }}" }
 
     - name: "Create autofs map auto.data"
       ipaautomountmap:
