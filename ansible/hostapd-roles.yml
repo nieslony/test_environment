@@ -16,6 +16,11 @@
         option: enabled
         value: 1
 
+    - name: "Enable copr"
+      command:
+        cmd: "dnf -y copr enable nieslony/arachne"
+        creates: "/etc/yum.repos.d/_copr:copr.fedorainfracloud.org:nieslony:arachne.repo"
+
     - name: "Install packages"
       dnf:
         name: usbutils
