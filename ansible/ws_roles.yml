@@ -12,6 +12,8 @@
           url: "https://printserver.linux.lab:631"
         - name: "IPA Server"
           url: "https://ipa01.linux.lab"
+        - name: "gateway"
+          url: "http://gw.nieslony.lan"
     skip_repo_backup: true
     commercial_packages: []
     gui_rpm_packages_fedora:
