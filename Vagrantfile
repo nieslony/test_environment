@@ -207,6 +207,40 @@ Vagrant.configure("2") do |config|
                 config_file: "ansible/ansible.cfg"
     end # fedora39-01
 
+    config.vm.define "fedora40-01" do |fedora4001|
+        fedora4001.vm.box = "cloud-image/fedora-40"
+        fedora4001.vm.hostname = "fedora40-01.linux.lab"
+
+        fedora4001.vm.provider :libvirt do |libvirt|
+            libvirt.memory = 4096
+            libvirt.machine_virtual_size = 40
+        end
+
+        fedora4001.vm.network :private_network,
+                :libvirt__network_name => "Lab_Linux_Internal",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        fedora4001.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        fedora4001.vm.provision "Workstation Basic",
+                type: "ansible",
+                playbook: "ansible/fedora-ws.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fedora4001.vm.provision "Join IPA domain",
+                type: "ansible",
+                playbook: "ansible/join-ipa-domain.yml",
+                config_file: "ansible/ansible.cfg"
+
+        fedora4001.vm.provision "Apply roles",
+                type: "ansible",
+                playbook: "ansible/ws_roles.yml",
+                config_file: "ansible/ansible.cfg"
+    end # fedora40-01
+
     config.vm.define "fedora38-01" do |fedora3801|
         fedora3801.vm.box = "generic/fedora38"
         fedora3801.vm.hostname = "fedora38-01.linux.lab"
