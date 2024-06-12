@@ -13,14 +13,13 @@
         - name: "IPA Server"
           url: "https://ipa01.linux.lab"
         - name: "gateway"
-          url: "http://gw.nieslony.lan"
+          url: "http://192.168.120.254"
     skip_repo_backup: true
     commercial_packages: []
     gui_rpm_packages_fedora:
         - sddm
         - dolphin
     print_server: printserver.linux.lab
-
 
     file_bookmarks:
         - name: "Music on Fileserver"
@@ -44,3 +43,4 @@
   post_tasks:
     - name: "Reboot"
       reboot:
+      changed_when: no
