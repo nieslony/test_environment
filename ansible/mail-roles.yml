@@ -24,6 +24,21 @@
           - epel-release
         state: latest
 
+    - name: Create /dev/vdb1
+      parted:
+        device: /dev/vdb
+        label: msdos
+        number: 1
+        fs_type: ext4
+        state: present
+        part_end: 100%
+        part_start: 0%
+
+    - name: Extend system volume group
+      lvg:
+        vg: centos9s
+        pvs: /dev/vda2,/dev/vdb1
+
   roles:
     - default-packages
     - mailserver
