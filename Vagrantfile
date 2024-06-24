@@ -213,7 +213,7 @@ Vagrant.configure("2") do |config|
         prepare_alma(mail)
         provision_ipa_member(mail)
 
-        mail.vm.provision "Mailserver Roles",
+        mail.vm.provision "Apply Roles",
                 :type => "ansible",
                 :playbook => "ansible/roles/mail.yml",
                 :config_file => "ansible/ansible.cfg",
@@ -333,7 +333,8 @@ Vagrant.configure("2") do |config|
         prepare_alma(fileserver)
         provision_ipa_member(fileserver)
 
-        fileserver.vm.provision "ansible",
+        fileserver.vm.provision "Apply Roles",
+                type: "ansible",
                 playbook: "ansible/roles/fileserver.yml",
                 config_file: "ansible/ansible.cfg"
     end # fileserver
@@ -376,40 +377,22 @@ Vagrant.configure("2") do |config|
     end # printserver
 
     config.vm.define "accesspoint" do |accesspoint|
-        accesspoint.vm.box = "generic/centos9s"
         accesspoint.vm.hostname = "accesspoint.linux.lab"
 
         accesspoint.vm.provider :libvirt do |libvirt|
                 libvirt.usb :bus => wifi_nix_usb_bus, :device => wifi_nix_usb_dev
         end
 
-        accesspoint.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
+        prepare_alma(accesspoint)
+        provision_ipa_member(accesspoint)
 
-        accesspoint.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
-        accesspoint.vm.provision "Sync with RTC on host",
-                type: "ansible",
-                playbook: "ansible/host-wide-timesync.yml",
-                config_file: "ansible/ansible.cfg"
-
-        accesspoint.vm.provision "Join Domain",
-                type: "ansible",
-                playbook: "ansible/join-ipa-domain.yml",
-                config_file: "ansible/ansible.cfg"
-
-        accesspoint.vm.provision "Apply roles",
+        accesspoint.vm.provision "Apply Roles",
                 type: "ansible",
                 playbook: "ansible/roles/hostapd.yml",
                 config_file: "ansible/ansible.cfg"
     end # accesspoint
 
     config.vm.define "gerbera" do |gerbera|
-        gerbera.vm.box = "generic/centos9s"
         gerbera.vm.hostname = "gerbera.linux.lab"
 
         gerbera.vm.provider :libvirt do |libvirt|
@@ -419,7 +402,7 @@ Vagrant.configure("2") do |config|
         prepare_alma(gerbera)
         provision_ipa_member(gerbera)
 
-        gerbera.vm.provision "Apply roles",
+        gerbera.vm.provision "Apply Roles",
                 type: "ansible",
                 playbook: "ansible/roles/gerbera.yml",
                 config_file: "ansible/ansible.cfg",
