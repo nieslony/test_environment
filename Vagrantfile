@@ -215,7 +215,7 @@ Vagrant.configure("2") do |config|
 
         mail.vm.provision "Mailserver Roles",
                 :type => "ansible",
-                :playbook => "ansible/mail-roles.yml",
+                :playbook => "ansible/roles/mail.yml",
                 :config_file => "ansible/ansible.cfg",
                 :extra_vars => {
                         maildomain: global_config["global_domain"],
@@ -252,7 +252,7 @@ Vagrant.configure("2") do |config|
 
         fedora3901.vm.provision "Apply roles",
                 type: "ansible",
-                playbook: "ansible/ws_roles.yml",
+                playbook: "ansible/roles/workstation.yml",
                 config_file: "ansible/ansible.cfg"
     end # fedora39-01
 
@@ -286,7 +286,7 @@ Vagrant.configure("2") do |config|
 
         fedora4001.vm.provision "Apply roles",
                 type: "ansible",
-                playbook: "ansible/ws_roles.yml",
+                playbook: "ansible/roles/workstation.yml",
                 config_file: "ansible/ansible.cfg"
     end # fedora40-01
 
@@ -334,7 +334,7 @@ Vagrant.configure("2") do |config|
         provision_ipa_member(fileserver)
 
         fileserver.vm.provision "ansible",
-                playbook: "ansible/fileserver.yml",
+                playbook: "ansible/roles/fileserver.yml",
                 config_file: "ansible/ansible.cfg"
     end # fileserver
 
@@ -350,7 +350,7 @@ Vagrant.configure("2") do |config|
 
         webserver.vm.provision "Apply roles",
                 type: "ansible",
-                playbook: "ansible/webserver-roles.yml",
+                playbook: "ansible/roles/webserver.yml",
                 config_file: "ansible/ansible.cfg",
                 extra_vars: {
                         ipaadmin_password: global_config["ipa"]["admin_password"],
@@ -371,7 +371,7 @@ Vagrant.configure("2") do |config|
 
         printserver.vm.provision "Apply roles",
                 type: "ansible",
-                playbook: "ansible/printserver-roles.yml",
+                playbook: "ansible/roles/printserver.yml",
                 config_file: "ansible/ansible.cfg"
     end # printserver
 
@@ -404,7 +404,7 @@ Vagrant.configure("2") do |config|
 
         accesspoint.vm.provision "Apply roles",
                 type: "ansible",
-                playbook: "ansible/hostapd-roles.yml",
+                playbook: "ansible/roles/hostapd.yml",
                 config_file: "ansible/ansible.cfg"
     end # accesspoint
 
@@ -421,7 +421,7 @@ Vagrant.configure("2") do |config|
 
         gerbera.vm.provision "Apply roles",
                 type: "ansible",
-                playbook: "ansible/gerbera-roles.yml",
+                playbook: "ansible/roles/gerbera.yml",
                 config_file: "ansible/ansible.cfg",
                 extra_vars: {
                         ipaadmin_password: global_config["ipa"]["admin_password"],
