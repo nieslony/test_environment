@@ -4,7 +4,11 @@
 
   vars:
     repo_whitelist:
+        - almalinux-appstream.repo
+        - almalinux-baseos.repo
+        - almalinux-crb.repo
         - centos.repo
+        - epel-cisco-openh264.repo
         - epel-next.repo
         - epel.repo
 
@@ -34,7 +38,6 @@
     - name: Enble EPEL
       dnf:
         name:
-          - epel-next-release
           - epel-release
         state: latest
 

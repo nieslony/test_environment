@@ -53,6 +53,72 @@ Vagrant.configure("2") do |config|
             :bus => "usb"
     end
 
+    def prepare_alma(cfg)
+        cfg.vm.box = "almalinux/9"
+
+        cfg.vm.provider :libvirt do |libvirt|
+            libvirt.storage :file, :size => '16G'
+        end
+
+        cfg.vm.provision "shell",
+                name: "Setup LVM and swap",
+                inline: <<-'SHELL'
+                dnf install -y lvm2
+                DEVS=""
+                for i in {b..z} ; do
+                    DEV=/dev/vd$i
+                    if [ -e "$DEV" ]; then
+                        echo "--- Create PV on $DEV ---"
+                        parted $DEV -s unit mib \
+                                mklabel gpt \
+                                mkpart primary 1 100% \
+                                set 1 lvm on || exit 1
+                        pvcreate ${DEV}1 || exit 1
+                        DEVS="$DEVS ${DEV}1"
+                    fi
+                done
+
+                echo "--- Create volume group ---"
+                vgcreate system $DEVS || exit 1
+
+                echo "--- Create and activate swap ---"
+                lvcreate --size 4G --name swap system || exit 1
+                mkswap /dev/system/swap || exit 1
+                echo "/dev/system/swap swap swap defaults 0 0" >> /etc/fstab
+                swapon --all --verbose || exit 1
+                SHELL
+
+        cfg.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        cfg.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+    end
+
+    def provision_ipa_member(cfg)
+        cfg.vm.network :private_network,
+                :libvirt__network_name => "Lab_Linux_Internal",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
+
+        cfg.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh"
+
+        cfg.vm.provision "Sync with RTC on host",
+                type: "ansible",
+                playbook: "ansible/host-wide-timesync.yml",
+                config_file: "ansible/ansible.cfg"
+
+        cfg.vm.provision "Join IPA Domain",
+                :type => "ansible" ,
+                :playbook => "ansible/join-ipa-domain.yml",
+                :config_file => "ansible/ansible.cfg"
+    end
+
     config.vm.define "dc01" do |dc01|
         dc01.vm.box = "win2022"
         dc01.vm.guest = "windows"
@@ -91,7 +157,6 @@ Vagrant.configure("2") do |config|
     end # dc01
 
     config.vm.define "ipa01" do |ipa01|
-        ipa01.vm.box = "generic/centos9s"
         ipa01.vm.hostname = "ipa01.linux.lab"
 
         ipa01.vm.network :private_network,
@@ -102,9 +167,7 @@ Vagrant.configure("2") do |config|
                 :netmask => "255.255.255.0",
                 :hostname => true
 
-        ipa01.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
+        prepare_alma(ipa01)
 
         ipa01.vm.provision "shell",
                 name: "Enable IPv6 for lo",
@@ -120,12 +183,14 @@ Vagrant.configure("2") do |config|
 
         ipa01.vm.provision "shell",
                 name: "Set locale",
-                inline: "localectl set-locale en_US@UTF-8"
+                inline: <<-'SHELL'
+                if !  rpm -qa | grep -q langgg ; echo $? ; then
+                        dnf install -y langpacks-en
+                fi
+                localectl set-locale en_US@UTF-8
+                SHELL
 
-        ipa01.vm.provision "Sync with RTC on host",
-                type: "ansible",
-                playbook: "ansible/host-wide-timesync.yml",
-                config_file: "ansible/ansible.cfg"
+
 
         ipa01.vm.provision "Setup IPA",
                 type: "ansible",
@@ -137,7 +202,6 @@ Vagrant.configure("2") do |config|
     end # ipa01
 
     config.vm.define "mail" do |mail|
-        mail.vm.box = "generic/centos9s"
         mail.vm.hostname = "mail.linux.lab"
 
         mail.vm.provider :libvirt do |libvirt|
@@ -146,24 +210,8 @@ Vagrant.configure("2") do |config|
             libvirt.storage :file, :size => '50G'
         end
 
-        mail.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
-
-        mail.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
-        mail.vm.provision "Sync with RTC on host",
-                type: "ansible",
-                playbook: "ansible/host-wide-timesync.yml",
-                config_file: "ansible/ansible.cfg"
-
-        mail.vm.provision "Join IPA Domain",
-                :type => "ansible" ,
-                :playbook => "ansible/join-ipa-domain.yml",
-                :config_file => "ansible/ansible.cfg"
+        prepare_alma(mail)
+        provision_ipa_member(mail)
 
         mail.vm.provision "Mailserver Roles",
                 :type => "ansible",
@@ -276,31 +324,14 @@ Vagrant.configure("2") do |config|
     end # fedora38-01
 
     config.vm.define "fileserver" do |fileserver|
-        fileserver.vm.box = "generic/centos9s"
         fileserver.vm.hostname = "fileserver.linux.lab"
 
         fileserver.vm.provider :libvirt do |libvirt|
             libvirt.memory = 1024
         end
 
-        fileserver.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
-
-        fileserver.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
-        fileserver.vm.provision "Sync with RTC on host",
-                type: "ansible",
-                playbook: "ansible/host-wide-timesync.yml",
-                config_file: "ansible/ansible.cfg"
-
-        fileserver.vm.provision "Join Domain",
-                type: "ansible",
-                playbook: "ansible/join-ipa-domain.yml",
-                config_file: "ansible/ansible.cfg"
+        prepare_alma(fileserver)
+        provision_ipa_member(fileserver)
 
         fileserver.vm.provision "ansible",
                 playbook: "ansible/fileserver.yml",
@@ -308,31 +339,14 @@ Vagrant.configure("2") do |config|
     end # fileserver
 
     config.vm.define "webserver" do |webserver|
-        webserver.vm.box = "generic/centos9s"
         webserver.vm.hostname = "webserver.linux.lab"
 
         webserver.vm.provider :libvirt do |libvirt|
             libvirt.memory = 1024
         end
 
-        webserver.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
-
-        webserver.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
-        webserver.vm.provision "Sync with RTC on host",
-                type: "ansible",
-                playbook: "ansible/host-wide-timesync.yml",
-                config_file: "ansible/ansible.cfg"
-
-        webserver.vm.provision "Join Domain",
-                type: "ansible",
-                playbook: "ansible/join-ipa-domain.yml",
-                config_file: "ansible/ansible.cfg"
+        prepare_alma(webserver)
+        provision_ipa_member(webserver)
 
         webserver.vm.provision "Apply roles",
                 type: "ansible",
@@ -352,24 +366,8 @@ Vagrant.configure("2") do |config|
             libvirt.memory = 1024
         end
 
-        printserver.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
-
-        printserver.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
-        printserver.vm.provision "Sync with RTC on host",
-                type: "ansible",
-                playbook: "ansible/host-wide-timesync.yml",
-                config_file: "ansible/ansible.cfg"
-
-        printserver.vm.provision "Join Domain",
-                type: "ansible",
-                playbook: "ansible/join-ipa-domain.yml",
-                config_file: "ansible/ansible.cfg"
+        prepare_alma(printserver)
+        provision_ipa_member(printserver)
 
         printserver.vm.provision "Apply roles",
                 type: "ansible",
@@ -418,24 +416,8 @@ Vagrant.configure("2") do |config|
             libvirt.storage :file, :size => '30G'
         end
 
-        gerbera.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
-
-        gerbera.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
-        gerbera.vm.provision "Sync with RTC on host",
-                type: "ansible",
-                playbook: "ansible/host-wide-timesync.yml",
-                config_file: "ansible/ansible.cfg"
-
-        gerbera.vm.provision "Join Domain",
-                type: "ansible",
-                playbook: "ansible/join-ipa-domain.yml",
-                config_file: "ansible/ansible.cfg"
+        prepare_alma(gerbera)
+        provision_ipa_member(gerbera)
 
         gerbera.vm.provision "Apply roles",
                 type: "ansible",

@@ -4,40 +4,32 @@
 
   vars:
     repo_whitelist:
+        - almalinux-appstream.repo
+        - almalinux-baseos.repo
+        - almalinux-crb.repo
         - centos.repo
+        - epel-cisco-openh264.repo
         - epel-next.repo
         - epel.repo
 
   pre_tasks:
     - name: Enable PowerTools
       command: "dnf config-manager --set-enabled powertools"
-      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "8"
+      when:
+        - ansible_distribution_file_variety == "RedHat"
+        - ansible_distribution_major_version == "8"
 
     - name: Enable CRB
       command: "dnf config-manager --set-enabled crb"
-      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "9"
+      when:
+        - ansible_distribution_file_variety == "RedHat"
+        - ansible_distribution_major_version == "9"
 
     - name: Enble EPEL
       dnf:
         name:
-          - epel-next-release
           - epel-release
         state: latest
-
-    - name: Create /dev/vdb1
-      parted:
-        device: /dev/vdb
-        label: msdos
-        number: 1
-        fs_type: ext4
-        state: present
-        part_end: 100%
-        part_start: 0%
-
-    - name: Extend system volume group
-      lvg:
-        vg: centos9s
-        pvs: /dev/vda2,/dev/vdb1
 
   roles:
     - default-packages

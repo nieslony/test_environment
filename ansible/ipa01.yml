@@ -62,6 +62,12 @@
       args:
         creates: /etc/krb5.keytab
 
+    - name: "Activate firewall"
+      service:
+        name: firewalld
+        state: enabled
+        state: started
+
     - name: Configure firewall
       firewalld:
         service: "{{ item }}"

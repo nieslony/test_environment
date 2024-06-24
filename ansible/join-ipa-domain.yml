@@ -7,7 +7,7 @@
   #   - ipa-vars.yml
 
   vars:
-    ipa_client_packages_centos8:
+    ipa_client_packages_rhel8:
         - "@idm"
         - openldap-clients
 
@@ -15,7 +15,7 @@
         - "@domain-client"
         - openldap-clients
 
-    ipa_client_packages_centos9:
+    ipa_client_packages_rhel9:
         - ipa-client
         - openldap-clients
 
@@ -40,15 +40,19 @@
         name: "{{ ipa_client_packages_fedora }}"
       when: ansible_distribution == "Fedora"
 
-    - name: "Install CentOS 8 Packages: {{ ipa_client_packages_centos8 | join(', ') }}"
+    - name: "Install RedHat 8 Packages: {{ ipa_client_packages_rhel8 | join(', ') }}"
       dnf:
-        name: "{{ ipa_client_packages_centos8 }}"
-      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "8"
+        name: "{{ ipa_client_packages_rhel8 }}"
+      when:
+        - ansible_distribution_file_variety == "RedHat"
+        - ansible_distribution_major_version == "8"
 
-    - name: "Install CentOS 9 Packages: {{ ipa_client_packages_centos9 | join(', ') }}"
+    - name: "Install RedHat 9 Packages: {{ ipa_client_packages_rhel9 | join(', ') }}"
       dnf:
-        name: "{{ ipa_client_packages_centos9 }}"
-      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "9"
+        name: "{{ ipa_client_packages_rhel9 }}"
+      when:
+        - ansible_distribution_file_variety == "RedHat"
+        - ansible_distribution_major_version == "9"
 
     - name: "Join {{ ipaserver_realm }}"
       command: >
