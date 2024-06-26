@@ -19,6 +19,7 @@
     gui_rpm_packages_fedora:
         - sddm
         - dolphin
+        - xmlstarlet
     print_server: printserver.linux.lab
 
   roles:

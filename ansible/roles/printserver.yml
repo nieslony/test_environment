@@ -3,43 +3,26 @@
   become: yes
 
   vars:
-    repo_whitelist:
-        - almalinux-appstream.repo
-        - almalinux-baseos.repo
-        - almalinux-crb.repo
-        - centos.repo
-        - epel-cisco-openh264.repo
-        - epel-next.repo
-        - epel.repo
+    playbook_path: |-
+        {{
+            (
+                lookup('file', '/proc/self/cmdline')
+                    | regex_replace('\u0000',' ')
+            ).split()
+                | select('match','^.*[.]ya?ml$')
+                | list
+                | first
+        }}
+    real_ansible_dir: "{{ (playbook_path + '/..') | realpath | dirname }}"
 
-    environment:
-        http_proxy: ""
-        https_proxy: ""
+  vars_files:
+    - "{{ real_ansible_dir }}/../config.yml"
+    - "{{ real_ansible_dir }}/vars/global.yml"
+    - "{{ real_ansible_dir }}/vars/ipa-config.yml"
 
   pre_tasks:
-    - set_fact:
-        playbook_path: "{{ (lookup('file', '/proc/self/cmdline') | regex_replace('\u0000',' ')).split() | select('match','^.*[.]ya?ml$') | list | first }}"
-
-    - set_fact:
-        real_playbook_dir: "{{ playbook_path | realpath | dirname }}"
-
-    - include_vars: "{{ real_playbook_dir }}/../config.yml"
-
-    - include_vars: "{{ real_playbook_dir }}/ipa-vars.yml"
-
-    - name: Enable PowerTools
-      command: "dnf config-manager --set-enabled powertools"
-      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "8"
-
-    - name: Enable CRB
-      command: "dnf config-manager --set-enabled crb"
-      when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "9"
-
-    - name: Enble EPEL
-      dnf:
-        name:
-          - epel-release
-        state: latest
+    - name: "Enable EL repos"
+      include_tasks: "{{ real_ansible_dir }}/enable-el-repos.yml"
 
     - name: "Find group printer-admins"
       command: "getent group printer-admins"

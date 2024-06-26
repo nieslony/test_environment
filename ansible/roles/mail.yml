@@ -15,6 +15,8 @@
         }}
     real_ansible_dir: "{{ (playbook_path + '/..') | realpath | dirname }}"
 
+    mail_cloud_fqdn: cloud.linux.lab
+
   vars_files:
     - "{{ real_ansible_dir }}/../config.yml"
     - "{{ real_ansible_dir }}/vars/global.yml"

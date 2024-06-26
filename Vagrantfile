@@ -31,7 +31,7 @@ Vagrant.configure("2") do |config|
 
     config.proxy.http = global_config["proxy_url"]
     config.proxy.https = global_config["proxy_url"]
-    config.proxy.no_proxy = "localhost,127.0.0.1,ipa01.linux.lab"
+    config.proxy.no_proxy = "localhost,127.0.0.1,192.168.0.0/16"
     config.timezone.value = :host
 
     config.vm.provider :libvirt do |libvirt|
@@ -351,26 +351,14 @@ Vagrant.configure("2") do |config|
             libvirt.memory = 4096
         end
 
-        fedora3901.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
-
-        fedora3901.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
+        provision_ipa_member(fedora3901)
 
         fedora3901.vm.provision "Workstation Basic",
                 type: "ansible",
                 playbook: "ansible/fedora-ws.yml",
                 config_file: "ansible/ansible.cfg"
 
-        fedora3901.vm.provision "Join IPA domain",
-                type: "ansible",
-                playbook: "ansible/join-ipa-domain.yml",
-                config_file: "ansible/ansible.cfg"
-
-        fedora3901.vm.provision "Apply roles",
+        fedora3901.vm.provision "Apply Roles",
                 type: "ansible",
                 playbook: "ansible/roles/workstation.yml",
                 config_file: "ansible/ansible.cfg"
@@ -385,26 +373,14 @@ Vagrant.configure("2") do |config|
             libvirt.machine_virtual_size = 40
         end
 
-        fedora4001.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
-
-        fedora4001.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
+        provision_ipa_member(fedora4001)
 
         fedora4001.vm.provision "Workstation Basic",
                 type: "ansible",
                 playbook: "ansible/fedora-ws.yml",
                 config_file: "ansible/ansible.cfg"
 
-        fedora4001.vm.provision "Join IPA domain",
-                type: "ansible",
-                playbook: "ansible/join-ipa-domain.yml",
-                config_file: "ansible/ansible.cfg"
-
-        fedora4001.vm.provision "Apply roles",
+        fedora4001.vm.provision "Apply Roles",
                 type: "ansible",
                 playbook: "ansible/roles/workstation.yml",
                 config_file: "ansible/ansible.cfg"
