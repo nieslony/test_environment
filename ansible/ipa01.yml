@@ -4,7 +4,7 @@
 
   vars_files:
     - "../config.yml"
-    - ipa-vars.yml
+    - "vars/ipa-config.yml"
 
   vars:
     ipa_server_packages:
@@ -65,8 +65,8 @@
     - name: "Activate firewall"
       service:
         name: firewalld
-        state: enabled
         state: started
+        enabled: yes
 
     - name: Configure firewall
       firewalld:
