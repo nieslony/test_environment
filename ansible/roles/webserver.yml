@@ -20,6 +20,9 @@
       - "www.{{ ansible_domain }}"
       - "www.test.lab"
 
+    enable_whoami_app: yes
+    enable_infopipe: yes
+
   vars_files:
     - "{{ real_ansible_dir }}/../config.yml"
     - "{{ real_ansible_dir }}/vars/global.yml"
