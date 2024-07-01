@@ -249,13 +249,12 @@ Vagrant.configure("2") do |config|
         prepare_alma(webserver)
         provision_ipa_member(webserver)
 
-        webserver.vm.provision "Apply roles",
+        webserver.vm.provision "Apply Roles",
                 type: "ansible",
                 playbook: "ansible/roles/webserver.yml",
                 config_file: "ansible/ansible.cfg",
                 extra_vars: {
-                        ipaadmin_password: global_config["ipa"]["admin_password"],
-                        vhosts: [ "www.test.lab", "www.linux.lab" ]
+                        ipaadmin_password: global_config["ipa"]["admin_password"]
                         }
     end # webserver
 
@@ -270,7 +269,7 @@ Vagrant.configure("2") do |config|
         prepare_alma(printserver)
         provision_ipa_member(printserver)
 
-        printserver.vm.provision "Apply roles",
+        printserver.vm.provision "Apply Roles",
                 type: "ansible",
                 playbook: "ansible/roles/printserver.yml",
                 config_file: "ansible/ansible.cfg"
