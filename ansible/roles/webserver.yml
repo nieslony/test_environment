@@ -22,6 +22,7 @@
 
     enable_whoami_app: yes
     enable_infopipe: yes
+    enable_constrained_delegation: yes
 
   vars_files:
     - "{{ real_ansible_dir }}/../config.yml"
