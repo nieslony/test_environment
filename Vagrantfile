@@ -31,7 +31,7 @@ Vagrant.configure("2") do |config|
 
     config.proxy.http = global_config["proxy_url"]
     config.proxy.https = global_config["proxy_url"]
-    config.proxy.no_proxy = "localhost,127.0.0.1,192.168.0.0/16"
+    config.proxy.no_proxy = "localhost,127.0.0.1,192.168.0.0/16,linux.lab,.linux.lab"
     config.timezone.value = :host
 
     config.vm.provider :libvirt do |libvirt|
