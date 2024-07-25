@@ -53,12 +53,17 @@ Vagrant.configure("2") do |config|
             :bus => "usb"
     end
 
-    def prepare_alma(cfg)
+    def prepare_alma(cfg, network="Lab_Linux_Internal")
         cfg.vm.box = "almalinux/9"
 
         cfg.vm.provider :libvirt do |libvirt|
             libvirt.storage :file, :size => '16G'
         end
+
+        cfg.vm.network :private_network,
+                :libvirt__network_name => network,
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route"
 
         cfg.vm.provision "shell",
                 name: "Setup LVM and swap",
@@ -99,20 +104,6 @@ Vagrant.configure("2") do |config|
     end
 
     def provision_ipa_member(cfg)
-        cfg.vm.network :private_network,
-                :libvirt__network_name => "Lab_Linux_Internal",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
-
-        cfg.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
-        cfg.vm.provision "Sync with RTC on host",
-                type: "ansible",
-                playbook: "ansible/host-wide-timesync.yml",
-                config_file: "ansible/ansible.cfg"
-
         cfg.vm.provision "Join IPA Domain",
                 :type => "ansible" ,
                 :playbook => "ansible/join-ipa-domain.yml",
@@ -259,7 +250,6 @@ Vagrant.configure("2") do |config|
     end # webserver
 
     config.vm.define "printserver" do |printserver|
-        printserver.vm.box = "generic/centos9s"
         printserver.vm.hostname = "printserver.linux.lab"
 
         printserver.vm.provider :libvirt do |libvirt|
@@ -311,35 +301,18 @@ Vagrant.configure("2") do |config|
     end # gerbera
 
     config.vm.define "remote_host" do |remote_host|
-        remote_host.vm.box = "generic/centos9s"
         remote_host.vm.hostname = "remote-host.test.lab"
 
         remote_host.vm.provider :libvirt do |libvirt|
             libvirt.memory = 1024
         end
 
-        remote_host.vm.network :private_network,
-                :libvirt__network_name => "Lab_Internet",
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
+        prepare_alma(remote_host, network="Lab_Internet")
 
-        remote_host.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
-        remote_host.vm.provision "Sync with RTC on host",
+        remote_host.vm.provision "Apply Roles",
                 type: "ansible",
-                playbook: "ansible/host-wide-timesync.yml",
+                playbook: "ansible/roles/remote_host.yml",
                 config_file: "ansible/ansible.cfg"
-
-        remote_host.vm.provision "shell",
-                name: "Install OpenVPN",
-                inline: <<-'SHELL'
-                dnf -y update
-                dnf install -y epel-release
-                dnf -y install openvpn
-                SHELL
-
     end # remote_host
 
     config.vm.define "fedora39-01" do |fedora3901|
