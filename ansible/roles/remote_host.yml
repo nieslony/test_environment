@@ -1,0 +1,17 @@
+- name: Remote Host
+  hosts: all
+  become: yes
+
+  pre_tasks:
+    - name: "Enable EL repos"
+      include_tasks: "{{ real_ansible_dir }}/enable-el-repos.yml"
+
+    - name: Install OpenVPN
+      dnf:
+        name:
+          - NetworkManager-openvpn
+          - openvpn
+        state: latest
+
+  roles:
+    - default-packages
