@@ -7,7 +7,7 @@
     delegation_uris: ["cloud.test.lab"]
     managed_bookmarks:
         - name: "Nextcloud"
-          url: "https://cloud.test.lab"
+          url: "https://cloud.linux.lab"
         - name: "Printserver"
           url: "https://printserver.linux.lab:631"
         - name: "IPA Server"
