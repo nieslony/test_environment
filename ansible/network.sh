@@ -3,6 +3,8 @@
 MANAGEMENT_NET=192.168.121.0
 MANAGEMENT_GW=192.168.121.1
 
+AUTOSTART_NW=$1
+
 echo "Install package"
 if rpm -qa | grep net-tools -q ; then
         echo "net-tools already installed"
@@ -25,7 +27,7 @@ for uuid in $( nmcli --field UUID con show | grep -v UUID ) ; do
                         nmcli con modify $uuid ipv4.ignore-auto-dns yes ipv4.ignore-auto-routes yes
                         ;;
                 192.168.100.*)
-                        new_nw_name="Internet"
+                        new_nw_name="Lab_Internet"
                         ;;
                 192.168.110.*)
                         new_nw_name="Lab_Windows_Internal"
@@ -38,6 +40,11 @@ for uuid in $( nmcli --field UUID con show | grep -v UUID ) ; do
         if [ -n "$new_nw_name" ]; then
                 echo "Renaming network $uuid -> $new_nw_name"
                 nmcli connection modify $uuid con-name "$new_nw_name"
+
+                if [ "$new_nw_name" != "$AUTOSTART_NW" -a "$new_nw_name" != "Management" ]; then
+                        nmcli connection modify $uuid connection.autoconnect no
+                        nmcli connection down $uuid
+                fi
         fi
 done
 

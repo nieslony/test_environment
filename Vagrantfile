@@ -53,17 +53,12 @@ Vagrant.configure("2") do |config|
             :bus => "usb"
     end
 
-    def prepare_alma(cfg, network="Lab_Linux_Internal")
+    def prepare_alma(cfg)
         cfg.vm.box = "almalinux/9"
 
         cfg.vm.provider :libvirt do |libvirt|
             libvirt.storage :file, :size => '16G'
         end
-
-        cfg.vm.network :private_network,
-                :libvirt__network_name => network,
-                :libvirt__autostart => "true",
-                :libvirt__forward_mode => "route"
 
         cfg.vm.provision "shell",
                 name: "Setup LVM and swap",
@@ -93,14 +88,23 @@ Vagrant.configure("2") do |config|
                 swapon --all --verbose || exit 1
                 SHELL
 
-        cfg.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh"
-
         cfg.vm.provision "Sync with RTC on host",
                 type: "ansible",
                 playbook: "ansible/host-wide-timesync.yml",
                 config_file: "ansible/ansible.cfg"
+    end
+
+    def setup_network(cfg, networks="Lab_Linux_Internal")
+            networks.split(/ *, */, -1).each() do |nw|
+                    cfg.vm.network :private_network,
+                        :libvirt__network_name => nw,
+                        :libvirt__forward_mode => "route"
+            end
+
+            cfg.vm.provision "shell",
+                name: "Setup network",
+                path: "ansible/network.sh",
+                args: networks.split(/ *, */, -1).first()
     end
 
     def provision_ipa_member(cfg)
@@ -159,6 +163,7 @@ Vagrant.configure("2") do |config|
                 :hostname => true
 
         prepare_alma(ipa01)
+        setup_network(ipa01)
 
         ipa01.vm.provision "shell",
                 name: "Enable IPv6 for lo",
@@ -202,6 +207,7 @@ Vagrant.configure("2") do |config|
         end
 
         prepare_alma(mail)
+        setup_network(mail)
         provision_ipa_member(mail)
 
         mail.vm.provision "Apply Roles",
@@ -222,6 +228,7 @@ Vagrant.configure("2") do |config|
         end
 
         prepare_alma(fileserver)
+        setup_network(fileserver)
         provision_ipa_member(fileserver)
 
         fileserver.vm.provision "Apply Roles",
@@ -238,6 +245,7 @@ Vagrant.configure("2") do |config|
         end
 
         prepare_alma(webserver)
+        setup_network(webserver)
         provision_ipa_member(webserver)
 
         webserver.vm.provision "Apply Roles",
@@ -257,6 +265,7 @@ Vagrant.configure("2") do |config|
         end
 
         prepare_alma(printserver)
+        setup_network(printserver)
         provision_ipa_member(printserver)
 
         printserver.vm.provision "Apply Roles",
@@ -273,6 +282,7 @@ Vagrant.configure("2") do |config|
         end
 
         prepare_alma(accesspoint)
+        setup_network(accesspoint)
         provision_ipa_member(accesspoint)
 
         accesspoint.vm.provision "Apply Roles",
@@ -289,6 +299,7 @@ Vagrant.configure("2") do |config|
         end
 
         prepare_alma(gerbera)
+        setup_network(gerbera)
         provision_ipa_member(gerbera)
 
         gerbera.vm.provision "Apply Roles",
@@ -307,7 +318,8 @@ Vagrant.configure("2") do |config|
             libvirt.memory = 1024
         end
 
-        prepare_alma(remote_host, network="Lab_Internet")
+        prepare_alma(remote_host)
+        setup_network(remote_host, networks="Lab_Internet")
 
         remote_host.vm.provision "Apply Roles",
                 type: "ansible",
@@ -323,6 +335,7 @@ Vagrant.configure("2") do |config|
             libvirt.memory = 4096
         end
 
+        setup_network(fedora3901, networks="Lab_Linux_Internal,Lab_Internet")
         provision_ipa_member(fedora3901)
 
         fedora3901.vm.provision "Workstation Basic",
@@ -345,6 +358,7 @@ Vagrant.configure("2") do |config|
             libvirt.machine_virtual_size = 40
         end
 
+        setup_network(fedora4001, networks="Lab_Linux_Internal,Lab_Internet")
         provision_ipa_member(fedora4001)
 
         fedora4001.vm.provision "Workstation Basic",
