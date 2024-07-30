@@ -30,6 +30,7 @@
     - firefox
     - thunderbird
     - autofs
+    - arachnecdl
 
   post_tasks:
     - name: "Reboot"
