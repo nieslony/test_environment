@@ -60,33 +60,9 @@ Vagrant.configure("2") do |config|
             libvirt.storage :file, :size => '16G'
         end
 
-        cfg.vm.provision "shell",
-                name: "Setup LVM and swap",
-                inline: <<-'SHELL'
-                dnf install -y lvm2
-                DEVS=""
-                for i in {b..z} ; do
-                    DEV=/dev/vd$i
-                    if [ -e "$DEV" ]; then
-                        echo "--- Create PV on $DEV ---"
-                        parted $DEV -s unit mib \
-                                mklabel gpt \
-                                mkpart primary 1 100% \
-                                set 1 lvm on || exit 1
-                        pvcreate ${DEV}1 || exit 1
-                        DEVS="$DEVS ${DEV}1"
-                    fi
-                done
-
-                echo "--- Create volume group ---"
-                vgcreate system $DEVS || exit 1
-
-                echo "--- Create and activate swap ---"
-                lvcreate --size 4G --name swap system || exit 1
-                mkswap /dev/system/swap || exit 1
-                echo "/dev/system/swap swap swap defaults 0 0" >> /etc/fstab
-                swapon --all --verbose || exit 1
-                SHELL
+        cfg.vm.provision "ansible",
+                playbook: "ansible/create-LVM-and-swap.yml",
+                config_file: "ansible/ansible.cfg"
 
         cfg.vm.provision "Sync with RTC on host",
                 type: "ansible",
@@ -350,13 +326,20 @@ Vagrant.configure("2") do |config|
     end # fedora39-01
 
     config.vm.define "fedora40-01" do |fedora4001|
-        fedora4001.vm.box = "cloud-image/fedora-40"
+        fedora4001.vm.box = "fedora/40-cloud-base"
         fedora4001.vm.hostname = "fedora40-01.linux.lab"
 
         fedora4001.vm.provider :libvirt do |libvirt|
             libvirt.memory = 4096
             libvirt.machine_virtual_size = 40
         end
+
+        fedora4001.vm.provision "Resize /",
+                type: "shell",
+                inline: <<-SHELL
+                growpart /dev/vda 4
+                btrfs filesystem resize max /
+                SHELL
 
         setup_network(fedora4001, networks="Lab_Linux_Internal,Lab_Internet")
         provision_ipa_member(fedora4001)

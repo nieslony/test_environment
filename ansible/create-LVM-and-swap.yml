@@ -1,0 +1,54 @@
+- name: Create LVM and swap
+  hosts: all
+  become: true
+
+  vars:
+    disks: "{{ ansible_devices.keys() | select('match', '^vd[b-z]$') }}"
+    partitions: >
+      {%- set parts = [] -%}
+      {%- for d in disks -%}
+      {{ parts.append("/dev/" + d + "1") }}
+      {%- endfor -%}
+      {{ parts }}
+    vg_name: system
+
+  tasks:
+    - name: "Install LVM tools"
+      dnf:
+        name: lvm2
+        state: present
+
+    - name: "Create physical volumes"
+      parted:
+        device: "/dev/{{ item}}"
+        number: 1
+        state: present
+        flags: [ lvm ]
+      loop: "{{ disks }}"
+
+    - name: "Create volume group {{ vg_name }} with partitions {{ partitions | join(',') }}"
+      lvg:
+        vg: "{{ vg_name}}"
+        pvs: "{{ partitions | join(',') }}"
+
+    - name: "Create LV swap"
+      lvol:
+        vg: "{{ vg_name }}"
+        lv: "swap"
+        size: 4G
+
+    - name: "Create swap filesystem"
+      filesystem:
+        fstype: swap
+        dev: "/dev/{{ vg_name }}/swap"
+
+    - name: "Create entry for swpa in /etc/fstab"
+      lineinfile:
+        path: /etc/fstab
+        line: "/dev/{{ vg_name }}/swap swap swap defaults"
+      notify: swapon
+
+  handlers:
+    - name: "Activate swap"
+      command: swapon --all
+      listen: swapon
