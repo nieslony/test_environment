@@ -15,14 +15,16 @@
         }}
     real_ansible_dir: "{{ (playbook_path + '/..') | realpath | dirname }}"
 
-    vhosts:
+    debug_defaults: yes
+
+    webserver_vhosts:
       - "{{ ansible_fqdn }}"
       - "www.{{ ansible_domain }}"
       - "www.test.lab"
-
-    enable_whoami_app: yes
-    enable_infopipe: yes
-    enable_constrained_delegation: yes
+    webserver_lvm_volsize_gb: 2
+    webserver_whoami_app_enabled: yes
+    webserver_infopipe_enabled: yes
+    webserver_constrained_delegation_enabled: yes
 
   vars_files:
     - "{{ real_ansible_dir }}/../config.yml"
