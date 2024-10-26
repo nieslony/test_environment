@@ -17,12 +17,8 @@
         - name: "Who Am I"
           url: "http://www.linux.lab/whoami"
     skip_repo_backup: true
-    commercial_packages: []
-    gui_rpm_packages_fedora:
-        - sddm
-        - dolphin
-        - xmlstarlet
-    print_server: printserver.linux.lab
+
+    gui_print_server: printserver.linux.lab
 
   roles:
     - gui
