@@ -3,9 +3,11 @@
   become: true
 
   vars:
-    trusted_uris: [".linux.lab", ".test.lab"]
-    delegation_uris: ["cloud.test.lab"]
-    managed_bookmarks:
+    skip_repo_backup: true
+
+    webbrowser_trusted_uris: [".linux.lab", ".test.lab"]
+    webbrowser_delegation_uris: ["cloud.test.lab"]
+    webbrowser_managed_bookmarks:
         - name: "Nextcloud"
           url: "https://cloud.linux.lab"
         - name: "Printserver"
@@ -16,17 +18,20 @@
           url: "http://192.168.120.254"
         - name: "Who Am I"
           url: "http://www.linux.lab/whoami"
-    skip_repo_backup: true
 
     gui_print_server: printserver.linux.lab
+
+    devws_exclude_packages:
+      - apache-netbeans
+      - virtio-win
 
   roles:
     - gui
     - evolution
-    - firefox
-    - thunderbird
+    - webbrowser
     - autofs
     - arachnecdl
+    - developer-workstation
 
   post_tasks:
     - name: "Reboot"
