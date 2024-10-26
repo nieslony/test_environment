@@ -1,3 +1,4 @@
+Write-Host -ForegroundColor White "Disable Auto Login"
 $Username = ''
 $Pass = ''
 $RegistryPath = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'

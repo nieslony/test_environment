@@ -158,6 +158,10 @@
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>6</Order>
+                    <CommandLine>PowerShell -File F:\install-updates.ps1</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>7</Order>
                     <CommandLine>c:\windows\System32\Sysprep\sysprep.exe /generalize /shutdown /OOBE /mode:vm</CommandLine>
                 </SynchronousCommand>
             </FirstLogonCommands>
