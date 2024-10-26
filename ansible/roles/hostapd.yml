@@ -2,7 +2,15 @@
   hosts: all
   become: yes
 
+  vars:
+    hostapd_bridge_slave_if: eth1
+
   pre_tasks:
+    - name: "Enable EPEL"
+      dnf:
+        name: epel-release
+        state: present
+
     - name: "Install elrepo"
       dnf:
         name: "https://elrepo.org/linux/kernel/el9/x86_64/RPMS/elrepo-release-9.1-1.el9.elrepo.noarch.rpm"
