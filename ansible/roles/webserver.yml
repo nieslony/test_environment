@@ -19,14 +19,14 @@
       - "{{ ansible_fqdn }}"
       - "www.{{ ansible_domain }}"
       - "www.test.lab"
-
-    webserver_enable_whoami_app: yes
-    webserver_enable_infopipe: yes
-    webserver_constrained_delegation_enabled: yes
     webserver_constrained_delegation_targets:
         ipa-ldap-delegation-targets:
             - "ldap/ipa01.linux.lab@LINUX.LAB"
     webserver_constrained_delegation_rule: webserver-delegation-rule
+    webserver_lvm_volsize_gb: 2
+    webserver_whoami_app_enabled: yes
+    webserver_infopipe_enabled: yes
+    webserver_constrained_delegation_enabled: yes
 
   vars_files:
     - "{{ real_ansible_dir }}/../config.yml"
