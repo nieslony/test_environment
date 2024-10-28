@@ -1,0 +1,64 @@
+- name: Configure pfSense
+
+  hosts: all
+
+  vars:
+    ansible_user: admin
+    ansible_password: pfsense
+
+    linux_lan_ip: "192.168.120.1"
+    windows_lan_ip: "192.168.110.1"
+
+    openVpn_ip: "192.168.120.250"
+
+  tasks:
+    - name: "Don't blockpriv"
+      lineinfile:
+        path: /conf/config.xml
+        regexp: "<blockpriv></blockpriv>"
+        state: absent
+
+    - name: "Allow LAN to everywhere"
+      pfsensible.core.pfsense_rule:
+        name: "Allow LAN to everywhere"
+        interface: "{{ item }}"
+        destination: any
+        source: any
+        quick: false
+        state: present
+      loop:
+        - lan
+        - opt1
+
+    - name: "Forward openVpn"
+      pfsensible.core.pfsense_nat_port_forward:
+        descr: openVpn
+        interface: wan
+        source: any
+        destination: "any:1194"
+        target: "{{ openVpn_ip }}:1194"
+        state: present
+
+    - name: "Create openVpn Gateway"
+      pfsensible.core.pfsense_gateway:
+        name: "openVpn"
+        interface: opt1
+        gateway: "{{ openVpn_ip }}"
+        state: present
+
+    - name: "Route to user vpn"
+      pfsensible.core.pfsense_route:
+        descr: "openVpn"
+        gateway: "openVpn"
+        network: "192.168.130.0/24"
+        state: present
+
+    - name: "Route to site vpn"
+      pfsensible.core.pfsense_route:
+        descr: "openVpn"
+        gateway: "openVpn"
+        network: "192.168.131.0/24"
+        state: present
+
+    - name: "Apply and reboot"
+      reboot:
