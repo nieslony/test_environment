@@ -9,6 +9,7 @@
       shell: "dnf repolist --enabled | grep -q '^crb '"
       register: find_crb_repo
       changed_when: no
+      failed_when: no
 
     - name: Enable CRB
       command: "dnf config-manager --set-enabled crb"
