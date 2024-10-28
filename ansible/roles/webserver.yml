@@ -15,14 +15,18 @@
         }}
     real_ansible_dir: "{{ (playbook_path + '/..') | realpath | dirname }}"
 
-    vhosts:
+    webserver_vhosts:
       - "{{ ansible_fqdn }}"
       - "www.{{ ansible_domain }}"
       - "www.test.lab"
 
-    enable_whoami_app: yes
-    enable_infopipe: yes
-    enable_constrained_delegation: yes
+    webserver_enable_whoami_app: yes
+    webserver_enable_infopipe: yes
+    webserver_constrained_delegation_enabled: yes
+    webserver_constrained_delegation_targets:
+        ipa-ldap-delegation-targets:
+            - "ldap/ipa01.linux.lab@LINUX.LAB"
+    webserver_constrained_delegation_rule: webserver-delegation-rule
 
   vars_files:
     - "{{ real_ansible_dir }}/../config.yml"
