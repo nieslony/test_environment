@@ -304,6 +304,23 @@ Vagrant.configure("2") do |config|
                 config_file: "ansible/ansible.cfg"
     end # remote_host
 
+    config.vm.define "almalinux9-01" do |almalinux901|
+        almalinux901.vm.hostname = "almalinux9-01.linux.lab"
+        prepare_alma(almalinux901)
+
+        almalinux901.vm.provider :libvirt do |libvirt|
+            libvirt.memory = 4096
+        end
+
+        setup_network(almalinux901, networks="Lab_Linux_Internal,Lab_Internet")
+        provision_ipa_member(almalinux901)
+
+        almalinux901.vm.provision "Apply Roles",
+                type: "ansible",
+                playbook: "ansible/roles/workstation.yml",
+                config_file: "ansible/ansible.cfg"
+    end # almalinux9-01
+
     config.vm.define "fedora39-01" do |fedora3901|
         fedora3901.vm.box = "generic/fedora39"
         fedora3901.vm.hostname = "fedora39-01.linux.lab"
@@ -314,11 +331,6 @@ Vagrant.configure("2") do |config|
 
         setup_network(fedora3901, networks="Lab_Linux_Internal,Lab_Internet")
         provision_ipa_member(fedora3901)
-
-        fedora3901.vm.provision "Workstation Basic",
-                type: "ansible",
-                playbook: "ansible/fedora-ws.yml",
-                config_file: "ansible/ansible.cfg"
 
         fedora3901.vm.provision "Apply Roles",
                 type: "ansible",
@@ -344,11 +356,6 @@ Vagrant.configure("2") do |config|
 
         setup_network(fedora4001, networks="Lab_Linux_Internal,Lab_Internet")
         provision_ipa_member(fedora4001)
-
-        fedora4001.vm.provision "Workstation Basic",
-                type: "ansible",
-                playbook: "ansible/fedora-ws.yml",
-                config_file: "ansible/ansible.cfg"
 
         fedora4001.vm.provision "Apply Roles",
                 type: "ansible",

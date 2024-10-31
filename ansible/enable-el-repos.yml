@@ -14,12 +14,11 @@
     - name: Enable CRB
       command: "dnf config-manager --set-enabled crb"
       when: find_crb_repo.rc != 0
+
+    - name: Enble EPEL
+      dnf:
+        name: epel-release
+        state: latest
   when:
     - ansible_distribution_file_variety == "RedHat"
     - ansible_distribution_major_version == "9"
-
-- name: Enble EPEL
-  dnf:
-    name:
-      - epel-release
-    state: latest

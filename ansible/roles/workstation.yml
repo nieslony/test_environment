@@ -3,7 +3,20 @@
   become: true
 
   vars:
+    playbook_path: |-
+        {{
+            (
+                lookup('file', '/proc/self/cmdline')
+                    | regex_replace('\u0000',' ')
+            ).split()
+                | select('match','^.*[.]ya?ml$')
+                | list
+                | first
+        }}
+    real_ansible_dir: "{{ (playbook_path + '/..') | realpath | dirname }}"
+
     skip_repo_backup: true
+    debug_defaults: true
 
     webbrowser_trusted_uris: [".linux.lab", ".test.lab"]
     webbrowser_delegation_uris: ["cloud.test.lab"]
@@ -25,6 +38,10 @@
       - apache-netbeans
       - virtio-win
 
+  pre_tasks:
+    - name: "Enable EL repos"
+      include_tasks: "{{ real_ansible_dir }}/enable-el-repos.yml"
+
   roles:
     - gui
     - evolution
@@ -34,6 +51,12 @@
     - developer-workstation
 
   post_tasks:
+    - name: Set x11 keyboard layout
+      command: "localectl set-x11-keymap de"
+
+    - name: Set keyboard layout
+      command: "localectl set-keymap de"
+
     - name: "Reboot"
       reboot:
       changed_when: no
