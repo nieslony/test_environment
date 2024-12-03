@@ -217,10 +217,6 @@ Vagrant.configure("2") do |config|
     config.vm.define "webserver" do |webserver|
         webserver.vm.hostname = "webserver.linux.lab"
 
-        webserver.vm.provider :libvirt do |libvirt|
-            libvirt.memory = 1024
-        end
-
         prepare_alma(webserver)
         setup_network(webserver)
         provision_ipa_member(webserver)
@@ -236,10 +232,6 @@ Vagrant.configure("2") do |config|
 
     config.vm.define "printserver" do |printserver|
         printserver.vm.hostname = "printserver.linux.lab"
-
-        printserver.vm.provider :libvirt do |libvirt|
-            libvirt.memory = 1024
-        end
 
         prepare_alma(printserver)
         setup_network(printserver)
@@ -321,23 +313,6 @@ Vagrant.configure("2") do |config|
                 config_file: "ansible/ansible.cfg"
     end # almalinux9-01
 
-    config.vm.define "fedora39-01" do |fedora3901|
-        fedora3901.vm.box = "generic/fedora39"
-        fedora3901.vm.hostname = "fedora39-01.linux.lab"
-
-        fedora3901.vm.provider :libvirt do |libvirt|
-            libvirt.memory = 4096
-        end
-
-        setup_network(fedora3901, networks="Lab_Linux_Internal,Lab_Internet")
-        provision_ipa_member(fedora3901)
-
-        fedora3901.vm.provision "Apply Roles",
-                type: "ansible",
-                playbook: "ansible/roles/workstation.yml",
-                config_file: "ansible/ansible.cfg"
-    end # fedora39-01
-
     config.vm.define "fedora40-01" do |fedora4001|
         fedora4001.vm.box = "fedora/40-cloud-base"
         fedora4001.vm.hostname = "fedora40-01.linux.lab"
@@ -362,4 +337,30 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/roles/workstation.yml",
                 config_file: "ansible/ansible.cfg"
     end # fedora40-01
+
+    config.vm.define "fedora41-01" do |fedora4101|
+        fedora4101.vm.box = "fedora/41-cloud-base"
+        fedora4101.vm.hostname = "fedora41-01.linux.lab"
+
+        fedora4101.vm.provider :libvirt do |libvirt|
+            libvirt.memory = 4196
+            libvirt.machine_virtual_size = 41
+        end
+
+        fedora4101.vm.provision "Resize /",
+                type: "shell",
+                inline: <<-SHELL
+                growpart /dev/vda 4
+                btrfs filesystem resize max /
+                dnf install -y python3-libdnf5
+                SHELL
+
+        setup_network(fedora4101, networks="Lab_Linux_Internal,Lab_Internet")
+        provision_ipa_member(fedora4101)
+
+        fedora4101.vm.provision "Apply Roles",
+                type: "ansible",
+                playbook: "ansible/roles/workstation.yml",
+                config_file: "ansible/ansible.cfg"
+    end # fedora41-01
 end
