@@ -1,10 +1,16 @@
 #!/bin/bash
 
-VM_NAME=gw.nieslony.lab
-VM_RAM=512
+VM_NAME=gw-test.nieslony.lab
+VM_RAM=1024
 VM_DISK_SIZE=8
+PREFIX_Lab_Windows_Internal=192.168.110
+PREFIX_Lab_Linux_Internal=192.168.120
+IP_Lab_Windows_Internal=$PREFIX_Lab_Windows_Internal.254
+IP_Lab_Linux_Internal=$PREFIX_Lab_Linux_Internal.254
+DHCP_FROM=10
+DHCP_TO=199
 
-DOWNLOAD_URL="https://atxfiles.netgate.com/mirror/downloads/pfSense-CE-2.6.0-RELEASE-amd64.iso.gz"
+DOWNLOAD_URL="https://atxfiles.netgate.com/mirror/downloads/pfSense-CE-2.7.2-RELEASE-amd64.iso.gz"
 INSTALL_ISO="$HOME/Downloads/$( basename -s .gz $DOWNLOAD_URL )"
 
 shopt -s extglob
@@ -14,8 +20,8 @@ function my_sleep {
     shift
     MSG="$@"
     while [ $REMAINING_SECS -gt 0 ]; do
-        echo -en "--- $MSG $REMAINING_SECS secs \r"
         REMAINING_SECS=$(( $REMAINING_SECS -1 ))
+        echo -en "--- $MSG $REMAINING_SECS secs \r"
         sleep 1
     done
     echo
@@ -41,11 +47,15 @@ function send_key {
         esac
         shift
     done
-    key="$@"
-    echo -n "Sending key $key ... $MSG"
-    virsh send-key $VM_NAME KEY_$key || exit 1
+    keys="$@"
+    echo "Sending key $keys ... $MSG"
+    for k in $keys ; do
+        virsh send-key $VM_NAME KEY_$k > /dev/null || exit 1
+    done
     if [ -n "$SLEEP" ]; then
         sleep $SLEEP
+    else
+        sleep 1
     fi
 }
 
@@ -100,6 +110,8 @@ function send_string {
     virsh send-key $VM_NAME KEY_ENTER > /dev/null
     if [ -n "$SLEEP" ]; then
         sleep $SLEEP
+    else
+        sleep 1
     fi
 }
 
@@ -115,6 +127,7 @@ if [ ! -e $INSTALL_ISO ]; then
 fi
 
 TMP_ISO=$( mktemp )
+echo -n "Copy installer ISO "
 cp -v $INSTALL_ISO $TMP_ISO
 
 virt-install \
@@ -135,14 +148,16 @@ virt-install \
     > /dev/null 2>&1 | grep -v GSpice-WARNING &
 
 my_sleep 60 "Booting installer..."
-for key in ENTER ENTER ENTER ENTER ENTER ENTER SPACE ENTER LEFT ENTER ; do
-    send_key $key
-    sleep 1
-done
+send_key -m "Accept License" ENTER
+send_key -m "Install pfSense" ENTER
+send_key -m "Create ZFS partition" ENTER
+send_key -m "Proceed with Installation" ENTER
+send_key -m "Stripe - no redundancy" ENTER
+send_key -m "Install on vdb0" SPACE ENTER
+send_key -m "Last chance, ... , really install!" LEFT ENTER
 
-my_sleep 60 "Installing pfSense..."
-send_key ENTER
-send_key ENTER
+my_sleep 30 "Installing pfSense..."
+send_key -m "Reboot" ENTER
 
 my_sleep 60 "Rebooting..."
 
@@ -155,35 +170,39 @@ send_string -m "Confirm reboot" y
 
 my_sleep 60 "Rebooting with configured interfaces..."
 
-log "Configure Windows_LAB"
-send_string -m "Set interface IP" 2
-send_string -m "Select Windows_LAB" 2
-send_string 192.168.110.254
-send_string 24
-send_key -m "No gateway" ENTER
-send_key -m "No IPv6" ENTER
-send_string -m "Enable DHCP" y
-send_string 192.168.110.10
-send_string 192.168.110.200
-send_string -s 7 -m "Revert to HTTP on webConfigurator" y
-send_key -s 1 ENTER
-
-log "Configure Linux_LAB"
-send_string -m "Set interface IP" 2
-send_string -m "Select Linux_LAB" 3
-send_string 192.168.120.254
-send_string 24
-send_key -m "No gateway" ENTER
-send_key -m "No IPv6" ENTER
-send_string -m "Enable DHCP" y
-send_string 192.168.120.10
-send_string 192.168.120.200
-send_string -s 7 -m "Revert to HTTP on webConfigurator" y
-send_key -s 1 ENTER
+# log "Configure Windows_LAB"
+# send_string -m "Set interface IP" 2
+# send_string -m "Select Windows_LAB" 2
+# send_string -m "Don't configure IPv4 with DHCP" n
+# send_string -m "Set IP" "$IP_Lab_Windows_Internal"
+# send_string 24
+# send_key -m "No gateway" ENTER
+# send_string -m "Don't configure IPv4 with DHCP" n
+# send_key -m "No IPv6  address" ENTER
+# send_string -m "Enable DHCP" y
+# send_string "$PREFIX_Lab_Windows_Internal.$DHCP_FROM"
+# send_string "$PREFIX_Lab_Windows_Internal.$DHCP_TO"
+# send_string -s 7 -m "Revert to HTTP on webConfigurator" y
+# send_key ENTER
+#
+# log "Configure Linux_LAB"
+# send_string -m "Set interface IP" 2
+# send_string -m "Select Linux_LAB" 3
+# send_string -m "Don't configure IPv4 with DHCP" n
+# send_string -m "Set IP" "$IP_Lab_Linux_Internal"
+# send_string 24
+# send_key -m "No gateway" ENTER
+# send_string -m "Don't configure IPv4 with DHCP" n
+# send_key -m "No IPv6  address" ENTER
+# send_string -m "Enable DHCP" y
+# send_string "$PREFIX_Lab_Linux_Internal.$DHCP_FROM"
+# send_string "$PREFIX_Lab_Linux_Internal.$DHCP_TO"
+# send_string -s 7 -m "Revert to HTTP on webConfigurator" y
+# send_key ENTER
 
 log "Enable ansible access"
 send_string -m "Enable SSH" 14
-send_string -s 1 y
+send_string y
 send_string -m "Enter Shell" 8
 send_string -m "Stopping firewall" "pfctl -d"
 

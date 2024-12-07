@@ -5,18 +5,68 @@
   vars:
     ansible_user: admin
     ansible_password: pfsense
-
-    linux_lan_ip: "192.168.120.1"
-    windows_lan_ip: "192.168.110.1"
+    ansible_python_interpreter: /usr/local/bin/python3.11
 
     openVpn_ip: "192.168.120.250"
+    hostname: gw
+    domain: test.lan
 
   tasks:
-    - name: "Don't blockpriv"
+    - name: "Don't block priv"
       lineinfile:
         path: /conf/config.xml
         regexp: "<blockpriv></blockpriv>"
         state: absent
+
+    - name: "Allow SSH on WAN"
+      pfsensible.core.pfsense_rule:
+        name: "Allow SSH on WAN"
+        action: pass
+        interface: wan
+        ipprotocol: inet
+        protocol: tcp
+        source: any
+        destination_port: 22
+        destination: "(self)"
+        state: present
+
+    - name: "Configure WAN"
+      pfsensible.core.pfsense_interface:
+        interface: vtnet0
+        blockpriv: false
+        descr: Intenet
+        enable: yes
+        ipv4_type: dhcp
+        ipv6_type: none
+
+    - name: "Configure Lab_Windows"
+      pfsensible.core.pfsense_interface:
+        interface: vtnet1
+        blockpriv: false
+        descr: Lab_Windows
+        enable: yes
+        ipv4_type: static
+        ipv4_address: 192.168.110.254
+        ipv4_prefixlen: 24
+        ipv6_type: none
+        state: present
+
+    - name: "Configure Lab_Linux"
+      pfsensible.core.pfsense_interface:
+        interface: vtnet2
+        blockpriv: false
+        descr: Lab_Linux
+        enable: yes
+        ipv4_type: static
+        ipv4_address: 192.168.120.254
+        ipv4_prefixlen: 24
+        ipv6_type: none
+        state: present
+
+    # - name: "Set hostname {{ hostname }}.{{ domain }}"
+    #   pfsensible.core.pfsense_setup:
+    #     hostname: "{{ hostname }}"
+    #     domain: "{{ domain }}"
 
     - name: "Allow LAN to everywhere"
       pfsensible.core.pfsense_rule:
@@ -30,14 +80,15 @@
         - lan
         - opt1
 
-    - name: "Forward openVpn"
+    - name: "Forward openVpn to {{ openVpn_ip }}"
       pfsensible.core.pfsense_nat_port_forward:
         descr: openVpn
         interface: wan
         source: any
-        destination: "any:1194"
+        destination: any:1194
         target: "{{ openVpn_ip }}:1194"
         state: present
+        associated_rule: pass
 
     - name: "Create openVpn Gateway"
       pfsensible.core.pfsense_gateway:
@@ -46,19 +97,109 @@
         gateway: "{{ openVpn_ip }}"
         state: present
 
-    - name: "Route to user vpn"
+    - name: "Add Route to user vpn"
       pfsensible.core.pfsense_route:
         descr: "openVpn"
         gateway: "openVpn"
         network: "192.168.130.0/24"
         state: present
 
-    - name: "Route to site vpn"
+    - name: "Add Route to site vpn"
       pfsensible.core.pfsense_route:
         descr: "openVpn"
         gateway: "openVpn"
         network: "192.168.131.0/24"
         state: present
+
+    - name: "Get config.xml"
+      slurp:
+        path: /conf/config.xml
+      register: config_xml_slurped
+
+    - set_fact:
+        config_xml_slurped__n:
+          content: |
+            <?xml version='1.0' encoding='UTF-8'?>
+            <pfsense>
+                <dhcpd>
+                    <lan>
+                        <enable/>
+                        <range>
+                                <from>192.168.1.100</from>
+                                <to>192.168.1.199</to>
+                        </range>
+                    </lan>
+                </dhcpd>
+            </pfsense>
+
+    - xml:
+        xmlstring: "{{ config_xml_slurped.content | b64decode }}"
+#        xmlstring: "{{ config_xml_slurped.content }}"
+        xpath: /pfsense/dhcpd
+      register: config_xml
+      delegate_to: 127.0.0.1
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+
+    - xml:
+        xmlstring: "{{ (tmp_config_xml.results | last).xmlstring }}"
+        xpath: "/pfsense/dhcpd/{{ item }}"
+        pretty_print: true
+      with_items:
+          - lan
+          - lan/enable
+          - lan/range
+          - opt1
+          - opt1/enable
+          - opt1/range
+      register: config_xml
+      delegate_to: 127.0.0.1
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+        tmp_config_xml:
+          results:
+            - xmlstring: "{{ config_xml.xmlstring }}"
+
+    - set_fact:
+        config_xml:
+          xmlstring: "{{ (config_xml.results | last).xmlstring }}"
+
+    - xml:
+        xmlstring: "{{ (tmp_config_xml.results | last).xmlstring }}"
+        xpath: "/pfsense/dhcpd/{{ item.key }}/range"
+        set_children:
+          - from: "{{ item.value.from }}"
+          - to: "{{ item.value.to }}"
+        pretty_print: true
+      with_dict:
+        lan:
+          from: 192.168.110.10
+          to: 192.168.110.199
+        opt1:
+          from: 192.168.120.10
+          to: 192.168.120.199
+      register: config_xml
+      delegate_to: 127.0.0.1
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+        tmp_config_xml:
+          results:
+            - xmlstring: "{{ config_xml.xmlstring }}"
+
+    - name: "Create backup of config.xml"
+      copy:
+        src: /conf/config.xml
+        dest: /conf/config.xml.backup
+        remote_src: true
+        force: false
+
+    - set_fact:
+        config_xml: "{{ (config_xml.results | last).xmlstring }}"
+
+    - name: "Write modified config.xml"
+      copy:
+        content: "{{ config_xml }}"
+        dest: /conf/config.xml
 
     - name: "Apply and reboot"
       reboot:
