@@ -30,6 +30,18 @@
         destination: "(self)"
         state: present
 
+    - name: "Allow HTTP on WAN"
+      pfsensible.core.pfsense_rule:
+        name: "Allow HTTP on WAN"
+        action: pass
+        interface: wan
+        ipprotocol: inet
+        protocol: tcp
+        source: any
+        destination_port: 80
+        destination: "(self)"
+        state: present
+
     - name: "Configure WAN"
       pfsensible.core.pfsense_interface:
         interface: vtnet0
@@ -114,11 +126,13 @@
     - name: "Get config.xml"
       slurp:
         path: /conf/config.xml
-      register: config_xml_slurped
+      register: config_xml
 
     - set_fact:
-        config_xml_slurped__n:
-          content: |
+        config_xml:
+          xmlstring: "{{ config_xml.content | b64decode }}"
+        config_xml__:
+          xmlstring: |
             <?xml version='1.0' encoding='UTF-8'?>
             <pfsense>
                 <dhcpd>
@@ -132,59 +146,84 @@
                 </dhcpd>
             </pfsense>
 
-    - xml:
-        xmlstring: "{{ config_xml_slurped.content | b64decode }}"
-#        xmlstring: "{{ config_xml_slurped.content }}"
+    - name: "Add node /pfsense/dhcpd"
+      xml:
+        xmlstring: "{{ config_xml.xmlstring }}"
         xpath: /pfsense/dhcpd
       register: config_xml
       delegate_to: 127.0.0.1
       vars:
         ansible_python_interpreter: /usr/bin/python3
 
-    - xml:
-        xmlstring: "{{ (tmp_config_xml.results | last).xmlstring }}"
-        xpath: "/pfsense/dhcpd/{{ item }}"
-        pretty_print: true
-      with_items:
-          - lan
-          - lan/enable
-          - lan/range
-          - opt1
-          - opt1/enable
-          - opt1/range
-      register: config_xml
-      delegate_to: 127.0.0.1
-      vars:
-        ansible_python_interpreter: /usr/bin/python3
-        tmp_config_xml:
-          results:
-            - xmlstring: "{{ config_xml.xmlstring }}"
-
-    - set_fact:
-        config_xml:
-          xmlstring: "{{ (config_xml.results | last).xmlstring }}"
-
-    - xml:
-        xmlstring: "{{ (tmp_config_xml.results | last).xmlstring }}"
-        xpath: "/pfsense/dhcpd/{{ item.key }}/range"
+    - name: "Set IP ranges"
+      xml:
+        xmlstring: "{{ config_xml.xmlstring }}"
+        xpath: /pfsense/dhcpd
         set_children:
-          - from: "{{ item.value.from }}"
-          - to: "{{ item.value.to }}"
-        pretty_print: true
-      with_dict:
-        lan:
-          from: 192.168.110.10
-          to: 192.168.110.199
-        opt1:
-          from: 192.168.120.10
-          to: 192.168.120.199
+          - lan:
+              _:
+              - enable:
+              - range:
+                  _:
+                  - from: 192.168.110.10
+                  - to: 192.168.110.199
+          - opt1:
+              _:
+              - enable:
+              - range:
+                  _:
+                  - from: 192.168.120.10
+                  - to: 192.168.120.199
       register: config_xml
       delegate_to: 127.0.0.1
       vars:
         ansible_python_interpreter: /usr/bin/python3
-        tmp_config_xml:
-          results:
-            - xmlstring: "{{ config_xml.xmlstring }}"
+
+    - name: "Enable kea dhcpserver"
+      xml:
+        xmlstring: "{{ config_xml.xmlstring }}"
+        xpath: /pfsense/dhcpbackend
+        value: kea
+      register: config_xml
+      delegate_to: 127.0.0.1
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: "Add node unbound"
+      xml:
+         xmlstring: "{{ config_xml.xmlstring }}"
+         xpath: /pfsense/unbound
+      register: config_xml
+      delegate_to: 127.0.0.1
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: "Configure DNS domainoverrides"
+      xml:
+        xmlstring: "{{ config_xml.xmlstring }}"
+        xpath: /pfsense/unbound
+        set_children:
+          - active_interface: all
+          - outgoing_interface: all
+          - domainoverrides:
+              _:
+              - domain: linux.lab.
+              - ip: 192.168.120.20
+              - descr:
+              - tls_hostname:
+          - domainoverrides:
+              _:
+              - domain: windows.lab.
+              - ip: 192.168.110.20
+              - descr:
+              - tls_hostname:
+          - enable:
+          - system_domain_local_zone_type: transparent
+        pretty_print: yes
+      register: config_xml
+      delegate_to: 127.0.0.1
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
 
     - name: "Create backup of config.xml"
       copy:
@@ -193,12 +232,9 @@
         remote_src: true
         force: false
 
-    - set_fact:
-        config_xml: "{{ (config_xml.results | last).xmlstring }}"
-
     - name: "Write modified config.xml"
       copy:
-        content: "{{ config_xml }}"
+        content: "{{ config_xml.xmlstring }}"
         dest: /conf/config.xml
 
     - name: "Apply and reboot"

@@ -170,36 +170,6 @@ send_string -m "Confirm reboot" y
 
 my_sleep 60 "Rebooting with configured interfaces..."
 
-# log "Configure Windows_LAB"
-# send_string -m "Set interface IP" 2
-# send_string -m "Select Windows_LAB" 2
-# send_string -m "Don't configure IPv4 with DHCP" n
-# send_string -m "Set IP" "$IP_Lab_Windows_Internal"
-# send_string 24
-# send_key -m "No gateway" ENTER
-# send_string -m "Don't configure IPv4 with DHCP" n
-# send_key -m "No IPv6  address" ENTER
-# send_string -m "Enable DHCP" y
-# send_string "$PREFIX_Lab_Windows_Internal.$DHCP_FROM"
-# send_string "$PREFIX_Lab_Windows_Internal.$DHCP_TO"
-# send_string -s 7 -m "Revert to HTTP on webConfigurator" y
-# send_key ENTER
-#
-# log "Configure Linux_LAB"
-# send_string -m "Set interface IP" 2
-# send_string -m "Select Linux_LAB" 3
-# send_string -m "Don't configure IPv4 with DHCP" n
-# send_string -m "Set IP" "$IP_Lab_Linux_Internal"
-# send_string 24
-# send_key -m "No gateway" ENTER
-# send_string -m "Don't configure IPv4 with DHCP" n
-# send_key -m "No IPv6  address" ENTER
-# send_string -m "Enable DHCP" y
-# send_string "$PREFIX_Lab_Linux_Internal.$DHCP_FROM"
-# send_string "$PREFIX_Lab_Linux_Internal.$DHCP_TO"
-# send_string -s 7 -m "Revert to HTTP on webConfigurator" y
-# send_key ENTER
-
 log "Enable ansible access"
 send_string -m "Enable SSH" 14
 send_string y
