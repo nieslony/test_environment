@@ -2,13 +2,13 @@
 
 Vagrant Test Environment creates a test environment with
 
-- Windows Domain Controlled based on Server 2020
+* Windows Domain Controlled based on Server 2020
 
-- FreeIPA server with trust with Microsoft AD
+* FreeIPA server with trust with Microsoft AD
 
-- basic servers like webserver, fileserver, printserver, mailserver (see details below)
+* basic servers like webserver, fileserver, printserver, mailserver (see details below)
 
-- current fedora versions with GUI
+* current fedora versions with GUI
 
 The setup requires ansible roles from https://github.com/nieslony/ansible-roles.git
 installed at _~/Ansible/ansible-roles_. All servers require libvirt as
@@ -18,8 +18,8 @@ virtualization platform.
 
 1. make yourself a member of the following local groups:
 
-    - qemu
-    - libvirt
+    * qemu
+    * libvirt
 
 1. to connect to libvirt via systembus `export LIBVIRT_DEFAULT_URI=qemu:///system`.
    You might want to add this to _~/.bashrc_.
@@ -47,10 +47,25 @@ virtualization platform.
 
         ./create-firewall.sh
 
-   The scripts downloads the pfSense installer and starts the installation in a
-   GUI window. Follow pfSense's installation instructions. When the installation is finished open a shell on the gateway and copy pfSense's configuration:
+   The script downloads the pfSense installer and starts the installation in a
+   GUI window. All neccessary keystrokes are triggered by the script. The
+   ansible playbook coinfigures:
 
-        scp 192.168.122.1:/<path-to-test_environment>/networks/config.xml /conf
+     * the Windows ans Linux network
+
+     * static routes between Windows and Linux network
+
+     * static routes to the openVPN network
+
+       * 192.168.130.0/24 (client VPN)
+
+       * 192.168.131.0/24 (site VPN)
+
+     * DNS resolver for domains windows.lan and linux.lab
+
+   [!CAUTION]
+   Don't touch the installation! Keyboard events will disturb the indstallation
+   process!
 
 1. create Windows box
 
@@ -72,7 +87,7 @@ virtualization platform.
    DC since Windows adds the management interfaces's IP address to Windows DNS
    server. A workaround is a parallel installation of dc01 and ipa01.
 
-   After the installation you have a trust between dc01 and ipa01.
+   After the installation you will have a trust between dc01 and ipa01.
 
 1. create the other machines. `vagrant status` lists all available machines.
    You can run as many machines in parallel as you want depending on your
