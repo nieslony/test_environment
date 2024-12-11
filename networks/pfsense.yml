@@ -8,6 +8,8 @@
     ansible_python_interpreter: /usr/local/bin/python3.11
 
     openVpn_ip: "192.168.120.250"
+    site_vpn_net: "192.168.130.0/24"
+    user_vpn_net: "192.168.131.0/24"
     hostname: gw
     domain: test.lan
 
@@ -18,35 +20,27 @@
         regexp: "<blockpriv></blockpriv>"
         state: absent
 
-    - name: "Allow SSH on WAN"
+    - name: "Allow on WAN"
       pfsensible.core.pfsense_rule:
-        name: "Allow SSH on WAN"
+        name: "Allow {{ item.key }} on WAN"
         action: pass
         interface: wan
         ipprotocol: inet
         protocol: tcp
         source: any
-        destination_port: 22
+        destination_port: "{{ item.value }}"
         destination: "(self)"
         state: present
-
-    - name: "Allow HTTP on WAN"
-      pfsensible.core.pfsense_rule:
-        name: "Allow HTTP on WAN"
-        action: pass
-        interface: wan
-        ipprotocol: inet
-        protocol: tcp
-        source: any
-        destination_port: 80
-        destination: "(self)"
-        state: present
+      with_dict:
+        ssh: 22
+        http: 80
+        https: 443
 
     - name: "Configure WAN"
       pfsensible.core.pfsense_interface:
         interface: vtnet0
         blockpriv: false
-        descr: Intenet
+        descr: Internet
         enable: yes
         ipv4_type: dhcp
         ipv6_type: none
@@ -94,13 +88,25 @@
 
     - name: "Forward openVpn to {{ openVpn_ip }}"
       pfsensible.core.pfsense_nat_port_forward:
-        descr: openVpn
+        descr: openVpn NAT
         interface: wan
         source: any
-        destination: any:1194
+        destination: "(self):1194"
         target: "{{ openVpn_ip }}:1194"
+        protocol: tcp/udp
         state: present
         associated_rule: pass
+
+    # - name: "Open openVpn from internet"
+    #   pfsensible.core.pfsense_rule:
+    #     name: "Open openVpn from internet"
+    #     sourece: any
+    #     interface: wan
+    #     ipprotocol: inet
+    #     protocol: tcp/udp
+    #     destination: "IP:{{ openVpn_ip }}"
+    #     destination_port: 1194
+    #     state: present
 
     - name: "Create openVpn Gateway"
       pfsensible.core.pfsense_gateway:
@@ -113,14 +119,14 @@
       pfsensible.core.pfsense_route:
         descr: "openVpn"
         gateway: "openVpn"
-        network: "192.168.130.0/24"
+        network: "{{ user_vpn_net }}"
         state: present
 
     - name: "Add Route to site vpn"
       pfsensible.core.pfsense_route:
         descr: "openVpn"
         gateway: "openVpn"
-        network: "192.168.131.0/24"
+        network: "{{ site_vpn_net }}"
         state: present
 
     - name: "Get config.xml"
