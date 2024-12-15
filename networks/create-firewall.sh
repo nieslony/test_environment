@@ -138,7 +138,7 @@ virt-install \
     --network network=Lab_Linux_Internal,model=virtio \
     --disk path="$VM_NAME.qcow2",device=disk,size="$VM_DISK_SIZE",bus=virtio,pool=default \
     --cdrom "$TMP_ISO" \
-    --osinfo freebsd9.2 \
+    --osinfo freebsd14.0 \
     --memory $VM_RAM \
     --memballoon virtio \
     --graphics keymap=de \
@@ -185,5 +185,9 @@ else
     echo "pfSense ansible collection already installed"
 fi
 
-VM_IP=$( virsh domifaddr --domain $VM_NAME | awk '/vnet/ { gsub(/\/.*/, "", $NF); print $NF; }' )
+VM_IP=$(
+    virsh domifaddr --domain $VM_NAME |
+        awk '/vnet/ { gsub(/\/.*/, "", $NF); print $NF; }'
+)
+ssh-keygen -R $VM_IP
 ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i $VM_IP, pfsense.yml
