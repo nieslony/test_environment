@@ -176,7 +176,7 @@ send_string y
 send_string -m "Enter Shell" 8
 send_string -m "Stopping firewall" "pfctl -d"
 
-# kill $( ps ax | awk '/[0-9] +virt-viewer --connect qemu:...system --wait gw.nieslony.lab/ { print $1; }' )
+log "Configure with ansible"
 
 if [ ! -e "$HOME/.ansible/collections/ansible_collections/pfsensible/core" ]; then
     echo "pfSense ansible collection not installed"
