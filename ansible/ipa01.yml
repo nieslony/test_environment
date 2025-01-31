@@ -12,10 +12,13 @@
         - "ipa-server-dns"
         - "ipa-server-trust-ad"
 
+  collections:
+    - freeipa.ansible_freeipa
+
   environment:
     LC_ALL: "C.UTF-8"
 
-  tasks:
+  pre_tasks:
     - name: "Install Updates"
       dnf:
         name: "*"
@@ -38,30 +41,10 @@
         regexp: "^192.168.120.20\\s*{{ ansible_fqdn }}"
         line: "192.168.120.20 {{ ansible_fqdn }}"
 
-    - name: "Setup IPA"
-      command: >
-        ipa-server-install
-        --unattended
-        --ds-password="{{ ipaadmin_password }}"
-        --admin-password="{{ ipaadmin_password }}"
-        --domain="{{ ipaserver_domain }}"
-        --realm="{{ ipaserver_realm }}"
-        --hostname="{{ ansible_fqdn }}"
-        --no-host-dns
-        --setup-kra
-        --setup-dns
-        --setup-adtrust
-        --allow-zone-overlap
-        --auto-reverse
-        --mkhomedir
-        --no-dnssec-validation
-        --ssh-trust-dns
-        --no-forwarders
-        --ntp-pool=pool.ntp.org
-        --ip-address=192.168.120.20
-      args:
-        creates: /etc/krb5.keytab
+  roles:
+    - freeipa.ansible_freeipa.ipaserver
 
+  post_tasks:
     - name: "Activate firewall"
       service:
         name: firewalld
@@ -88,10 +71,9 @@
         zone_name: linux.lab
 
     - name: IPA server config
-      ipa_config:
-        ipa_pass: "{{ ipaadmin_password }}"
-        ipa_host: "{{ ansible_fqdn }}"
-        ipadefaultloginshell: /bin/bash
+      ipaconfig:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        defaultshell: /bin/bash
       environment:
         http_proxy: ""
         https_proxy: ""
@@ -145,34 +127,6 @@
       loop:
         - { name: autoconfig, type: CNAME, value: mail.linux.lab. }
         - { name: gw, type: A, value: "192.168.120.254" }
-
-    - name: "Add Windows forward DNS zone"
-      ipadnsforwardzone:
-        ipaadmin_password: "{{ ipaadmin_password }}"
-        name: windows.lab
-        forwarders:
-            - ip_address: 192.168.110.20
-        forwardpolicy: only
-        state: present
-        skip_overlap_check: true
-      environment:
-        LANG: "en_US@UTF-8"
-        LANGUAGE: "en_US@UTF-8"
-        LC_ALL: "C.UTF-8"
-
-    - name: "Add Windows forward reverse DNS zone"
-      ipadnsforwardzone:
-        ipaadmin_password: "{{ ipaadmin_password }}"
-        name: 110.168.192.in-addr.arpa.
-        forwarders:
-            - ip_address: 192.168.110.20
-        forwardpolicy: only
-        state: present
-        skip_overlap_check: true
-      environment:
-        LANG: "en_US@UTF-8"
-        LANGUAGE: "en_US@UTF-8"
-        LC_ALL: "C.UTF-8"
 
     - name: "Create trust to AD"
       ipatrust:

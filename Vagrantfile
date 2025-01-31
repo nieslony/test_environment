@@ -78,10 +78,10 @@ Vagrant.configure("2") do |config|
                         :libvirt__forward_mode => "route"
             end
 
-            cfg.vm.provision "shell",
-                name: "Setup network",
-                path: "ansible/network.sh",
-                args: networks.split(/ *, */, -1).first()
+            cfg.vm.provision "Setup Network",
+                type: "ansible",
+                playbook: "ansible/network.yml",
+                config_file: "ansible/ansible.cfg"
     end
 
     def provision_ipa_member(cfg)
@@ -140,19 +140,19 @@ Vagrant.configure("2") do |config|
                 :hostname => true
 
         prepare_alma(ipa01)
-        setup_network(ipa01)
-
-        ipa01.vm.provision "shell",
-                name: "Enable IPv6 for lo",
-                inline: <<-'SHELL'
-                sysctl -w net.ipv6.conf.lo.disable_ipv6=0
-                echo "net.ipv6.conf.lo.disable_ipv6 = 0" > /etc/sysctl.d/10-ipv6.conf
-                SHELL
-
-        ipa01.vm.provision "shell",
-                name: "Add default route",
-                run: "always",
-                inline: "route add default gw 192.168.120.254"
+        ipa01.vm.provision "Setup Network",
+                type: "ansible",
+                playbook: "ansible/network.yml",
+                config_file: "ansible/ansible.cfg",
+                extra_vars: {
+                        static_network: {
+                                "192.168.120.0": {
+                                        ip: "192.168.120.20/24",
+                                        dns: ["192.168.120.254"],
+                                        gw: "192.168.120.254"
+                                        }
+                                }
+                        }
 
         ipa01.vm.provision "shell",
                 name: "Set locale",
@@ -162,8 +162,6 @@ Vagrant.configure("2") do |config|
                 fi
                 localectl set-locale en_US@UTF-8
                 SHELL
-
-
 
         ipa01.vm.provision "Setup IPA",
                 type: "ansible",
