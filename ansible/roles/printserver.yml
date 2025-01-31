@@ -24,24 +24,6 @@
     - name: "Enable EL repos"
       include_tasks: "{{ real_ansible_dir }}/enable-el-repos.yml"
 
-    - name: "Find group printer-admins"
-      command: "getent group printer-admins"
-      register: group_printer_admins
-      changed_when: no
-      ignore_errors: true
-
-    - name: "Create group printer-admins"
-      ipa_group:
-        name: printer-admins
-        append: true
-        user:
-            - rossi
-        ipa_pass: "{{ ipaadmin_password }}"
-      environment:
-        http_proxy: ""
-        https_proxy: ""
-      when: group_printer_admins.rc == 2
-
   roles:
     - default-packages
     - printserver
