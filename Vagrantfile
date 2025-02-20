@@ -241,6 +241,19 @@ Vagrant.configure("2") do |config|
                 config_file: "ansible/ansible.cfg"
     end # printserver
 
+    config.vm.define "wiki" do |wiki|
+        wiki.vm.hostname = "wiki.linux.lab"
+
+        prepare_alma(wiki)
+        setup_network(wiki)
+        provision_ipa_member(wiki)
+
+        wiki.vm.provision "Apply Roles",
+                type: "ansible",
+                playbook: "ansible/roles/wiki.yml",
+                config_file: "ansible/ansible.cfg"
+    end # wiki
+
     config.vm.define "accesspoint" do |accesspoint|
         accesspoint.vm.hostname = "accesspoint.linux.lab"
 
