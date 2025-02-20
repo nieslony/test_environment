@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VM_NAME=gw-test.nieslony.lab
+VM_NAME=gw.nieslony.lab
 VM_RAM=1024
 VM_DISK_SIZE=8
 PREFIX_Lab_Windows_Internal=192.168.110
