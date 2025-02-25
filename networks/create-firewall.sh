@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VM_NAME=gw.nieslony.lab
-VM_RAM=1024
+VM_RAM=2048
 VM_DISK_SIZE=8
 PREFIX_Lab_Windows_Internal=192.168.110
 PREFIX_Lab_Linux_Internal=192.168.120
@@ -126,8 +126,18 @@ if [ ! -e $INSTALL_ISO ]; then
     gunzip $INSTALL_ISO_GZ
 fi
 
+if virsh domid --domain gw.nieslony.lab > /dev/null 2>&1 ; then
+    log "Force shutdown of $VM_NAME"
+    virsh destroy --domain $VM_NAME
+    log "Remove $VM_NAME"
+    virsh undefine --domain $VM_NAME --remove-all-storage
+fi
+
 TMP_ISO=$( mktemp )
 echo -n "Copy installer ISO "
+
+trap "virsh vol-delete --pool tmp --vol $TMP_ISO" EXIT
+
 cp -v $INSTALL_ISO $TMP_ISO
 
 virt-install \
@@ -175,6 +185,7 @@ send_string -m "Enable SSH" 14
 send_string y
 send_string -m "Enter Shell" 8
 send_string -m "Stopping firewall" "pfctl -d"
+#send_string -m "Stopping firewall" "pfctl -F all"
 
 log "Configure with ansible"
 
@@ -190,4 +201,4 @@ VM_IP=$(
         awk '/vnet/ { gsub(/\/.*/, "", $NF); print $NF; }'
 )
 ssh-keygen -R $VM_IP
-ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i $VM_IP, pfsense.yml
+ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -vv -i $VM_IP, pfsense.yml
