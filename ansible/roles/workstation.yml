@@ -29,6 +29,8 @@
           url: "https://ipa01.linux.lab"
         - name: "gateway"
           url: "http://192.168.120.254"
+        - name: "Wifi Settings"
+          url: "https://accesspoint.linux.lab/wifi"
         - name: "Who Am I"
           url: "http://www.linux.lab/whoami"
 
