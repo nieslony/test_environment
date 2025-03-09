@@ -78,7 +78,7 @@
         http_proxy: ""
         https_proxy: ""
 
-    - name: Create Users
+    - name: "Create Users"
       ipauser:
         ipaadmin_password: "{{ ipaadmin_password }}"
         name: "{{ item.name }}"
