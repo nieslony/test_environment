@@ -4,6 +4,22 @@
 
   vars:
     hostapd_bridge_slave_if: eth1
+    playbook_path: |-
+        {{
+            (
+                lookup('file', '/proc/self/cmdline')
+                    | regex_replace('\u0000',' ')
+            ).split()
+                | select('match','^.*[.]ya?ml$')
+                | list
+                | first
+        }}
+    real_ansible_dir: "{{ (playbook_path + '/..') | realpath | dirname }}"
+
+  vars_files:
+    - "{{ real_ansible_dir }}/../config.yml"
+    - "{{ real_ansible_dir }}/vars/global.yml"
+    - "{{ real_ansible_dir }}/vars/ipa-config.yml"
 
   pre_tasks:
     - name: "Enable EPEL"
@@ -13,7 +29,7 @@
 
     - name: "Install elrepo"
       dnf:
-        name: "https://elrepo.org/linux/kernel/el9/x86_64/RPMS/elrepo-release-9.1-1.el9.elrepo.noarch.rpm"
+        name: "https://www.elrepo.org/elrepo-release-9.el9.elrepo.noarch.rpm"
         state: present
         disable_gpg_check: yes
 
