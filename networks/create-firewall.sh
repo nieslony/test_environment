@@ -1,6 +1,7 @@
 #!/bin/bash
 
-VM_NAME=gw.nieslony.lab
+VM_HOSTNAME=gw
+VM_DOMAIN=test.lab
 VM_RAM=2048
 VM_DISK_SIZE=8
 PREFIX_Lab_Windows_Internal=192.168.110
@@ -14,6 +15,19 @@ DOWNLOAD_URL="https://atxfiles.netgate.com/mirror/downloads/pfSense-CE-2.7.2-REL
 INSTALL_ISO="$HOME/Downloads/$( basename -s .gz $DOWNLOAD_URL )"
 
 shopt -s extglob
+
+function usage {
+    cat <<EOF
+Usage:
+    $( basename $0 ) [-t|--test] [--force|-f]
+
+Options:
+    -t --test   create test VM, append "-test" to machine name
+    -f --force  force delete existing machine
+EOF
+
+    exit
+}
 
 function my_sleep {
     REMAINING_SECS=$1
@@ -115,6 +129,42 @@ function send_string {
     fi
 }
 
+while [ -n "$1" ]; do
+    case "$1" in
+        --test | -t)
+            VM_HOSTNAME=gw-test
+            ;;
+        --force | -f)
+            FORCE_DELETE=yes
+            ;;
+        *)
+            usage
+            ;;
+    esac
+    shift
+done
+VM_NAME=$VM_HOSTNAME.$VM_DOMAIN
+
+log "Try to find existing machine $VM_NAME ..."
+if virsh domid --domain $VM_NAME > /dev/null 2>&1 ; then
+    if [ -z "$FORCE_DELETE" ]; then
+        while [ "$REALLY_DELETE" != "y" -a "$REALLY_DELETE" != "n" ]; do
+            read -p "Really delete existing machine $VM_NAME? (y/n) " REALLY_DELETE
+            if [ "$REALLY_DELETE" = "n" ]; then
+                echo "Exiting ..."
+                exit
+            fi
+        done
+    fi
+
+    log "Force shutdown of $VM_NAME"
+    virsh destroy --domain $VM_NAME
+    log "Remove $VM_NAME"
+    virsh undefine --domain $VM_NAME --remove-all-storage
+else
+    echo "Machine $VM_NAME does not exist, nothing to delete."
+fi
+
 if [ ! -e $INSTALL_ISO ]; then
     INSTALL_ISO_GZ="$INSTALL_ISO.gz"
     if [ ! -e $INSTALL_ISO_GZ ]; then
@@ -124,13 +174,6 @@ if [ ! -e $INSTALL_ISO ]; then
         )
     fi
     gunzip $INSTALL_ISO_GZ
-fi
-
-if virsh domid --domain gw.nieslony.lab > /dev/null 2>&1 ; then
-    log "Force shutdown of $VM_NAME"
-    virsh destroy --domain $VM_NAME
-    log "Remove $VM_NAME"
-    virsh undefine --domain $VM_NAME --remove-all-storage
 fi
 
 TMP_ISO=$( mktemp )
@@ -185,7 +228,6 @@ send_string -m "Enable SSH" 14
 send_string y
 send_string -m "Enter Shell" 8
 send_string -m "Stopping firewall" "pfctl -d"
-#send_string -m "Stopping firewall" "pfctl -F all"
 
 log "Configure with ansible"
 
@@ -201,4 +243,4 @@ VM_IP=$(
         awk '/vnet/ { gsub(/\/.*/, "", $NF); print $NF; }'
 )
 ssh-keygen -R $VM_IP
-ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -vv -i $VM_IP, pfsense.yml
+ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i $VM_IP, pfsense.yml
