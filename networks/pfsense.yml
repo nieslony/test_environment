@@ -7,6 +7,8 @@
     ansible_password: pfsense
     ansible_python_interpreter: /usr/local/bin/python3.11
 
+    ansible_ssh_extra_args: '-o ControlMaster=auto -o ControlPersist=60s -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o TCPKeepAlive=yes'
+
     openVpn_ip: "192.168.120.250"
     site_vpn_net: "192.168.130.0/24"
     user_vpn_net: "192.168.131.0/24"
@@ -20,28 +22,43 @@
         regexp: "<blockpriv></blockpriv>"
         state: absent
 
-    - name: "Allow on WAN interface"
-      pfsensible.core.pfsense_rule:
-        name: "Allow {{ item.name }} on WAN"
-        action: pass
-        interface: wan
-        ipprotocol: inet
-        source: any
-        destination: "(self)"
-        protocol: "{{ item.protocol | default('tcp') }}"
-        destination_port: "{{ item.port | default(omit) }}"
-        icmptype: "{{ item.icmptype | default('omit') }}"
-        state: present
-      with_items:
-        - name: ssh
-          port: 22
-        - name: http
-          port: 80
-        - name: https
-          port: 443
-        - name: icmp
-          protocol: icmp
-          icmptype: any
+    - name: "Aggreagate rules"
+      pfsensible.core.pfsense_aggregate:
+        aggregated_rules:
+          - interface: wan
+            ipprotocol: inet
+            source: any
+            destination: (self)
+            protocol: tcp
+            name: ssh
+            destination_port: 22
+          - interface: wan
+            ipprotocol: inet
+            source: any
+            destination: (self)
+            protocol: tcp
+            name: http
+            destination_port: 80
+          - interface: wan
+            ipprotocol: inet
+            source: any
+            destination: (self)
+            protocol: tcp
+            name: https
+            destination_port: 443
+          - interface: wan
+            ipprotocol: inet
+            source: any
+            destination: (self)
+            protocol: icmp
+            name: icmp
+            icmptype: any
+      async: 30
+      poll: 5
+
+    - name: "Wait 10sec"
+      pause:
+        seconds: 10
 
     - name: "Configure Networks"
       pfsensible.core.pfsense_interface:
@@ -68,6 +85,7 @@
       pfsensible.core.pfsense_setup:
         hostname: "{{ hostname }}"
         domain: "{{ domain }}"
+        timezone: Europe/Vienna
 
     - name: "Allow LAN to everywhere"
       pfsensible.core.pfsense_rule:
@@ -81,17 +99,24 @@
         - lan
         - opt1
 
-    # - name: "Configure DNS resolver"
-    #   pfsensible.core.pfsense_dns_resolver:
-    #     state: present
-    #     enablessl: false
-    #     forward_tls_upstream: false
-    #     dnssec: false
-    #     domainoverrides:
-    #       - domain: windows.lab
-    #         ip: 192.168.110.20
-    #       - domain: linux.lab
-    #         ip: 192.168.120.20
+    - name: "Configure DNS resolver"
+      pfsensible.core.pfsense_dns_resolver:
+        state: present
+        enablessl: false
+        dnssec: false
+        dnssecstripped: false
+        domainoverrides:
+          - domain: windows.lab.
+            ip: 192.168.110.20
+          - domain: linux.lab.
+            ip: 192.168.120.20
+        infra_host_ttl: 60
+
+    - name: "Remove forward_tls_upstream"
+      lineinfile:
+        path: /conf/config.xml
+        regexp: "<forward_tls_upstream>.*</forward_tls_upstream>"
+        state: absent
 
     - name: "Forward openVpn to {{ openVpn_ip }}"
       pfsensible.core.pfsense_nat_port_forward:
@@ -104,17 +129,6 @@
         state: present
         associated_rule: pass
 
-    # - name: "Open openVpn from internet"
-    #   pfsensible.core.pfsense_rule:
-    #     name: "Open openVpn from internet"
-    #     sourece: any
-    #     interface: wan
-    #     ipprotocol: inet
-    #     protocol: tcp/udp
-    #     destination: "IP:{{ openVpn_ip }}"
-    #     destination_port: 1194
-    #     state: present
-
     - name: "Create openVpn Gateway"
       pfsensible.core.pfsense_gateway:
         name: "openVpn"
@@ -124,13 +138,15 @@
 
     - name: "Add Route to VPNs"
       pfsensible.core.pfsense_route:
-        descr: "openVpn"
+        descr: "openVpn: {{ item.descr }}"
         gateway: "openVpn"
-        network: "{{ item }}"
+        network: "{{ item.net }}"
         state: present
       with_items:
-        - "{{ user_vpn_net }}"
-        - "{{ site_vpn_net }}"
+        - net: "{{ user_vpn_net }}"
+          descr: UserVpn
+        - net: "{{ site_vpn_net }}"
+          descr: SiteVpn
 
     - name: "Get config.xml"
       slurp:
@@ -202,33 +218,6 @@
       xml:
          xmlstring: "{{ config_xml.xmlstring }}"
          xpath: /pfsense/unbound
-      register: config_xml
-      delegate_to: 127.0.0.1
-      vars:
-        ansible_python_interpreter: /usr/bin/python3
-
-    - name: "Configure DNS domainoverrides"
-      xml:
-        xmlstring: "{{ config_xml.xmlstring }}"
-        xpath: /pfsense/unbound
-        set_children:
-          - active_interface: all
-          - outgoing_interface: all
-          - domainoverrides:
-              _:
-              - domain: linux.lab.
-              - ip: 192.168.120.20
-              - descr:
-              - tls_hostname:
-          - domainoverrides:
-              _:
-              - domain: windows.lab.
-              - ip: 192.168.110.20
-              - descr:
-              - tls_hostname:
-          - enable:
-          - system_domain_local_zone_type: transparent
-        pretty_print: yes
       register: config_xml
       delegate_to: 127.0.0.1
       vars:
