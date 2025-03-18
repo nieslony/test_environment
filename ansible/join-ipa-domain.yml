@@ -2,23 +2,7 @@
   hosts: all
   become: true
 
-  # vars_files:
-  #   - "{{ '.' | realpath }}/../config.yml"
-  #   - ipa-vars.yml
-
   vars:
-    ipa_client_packages_rhel8:
-        - "@idm"
-        - openldap-clients
-
-    ipa_client_packages_fedora:
-        - "@domain-client"
-        - openldap-clients
-
-    ipa_client_packages_rhel9:
-        - ipa-client
-        - openldap-clients
-
     playbook_path: |-
         {{
             (
@@ -29,78 +13,13 @@
                 | list
                 | first
         }}
-    real_ansible_dir: "{{ playbook_path | realpath | dirname }}"
+    real_ansible_dir: "{{ (playbook_path + '/..') | realpath | dirname }}"
 
   vars_files:
-    - "{{ real_ansible_dir }}/../config.yml"
-    - "{{ real_ansible_dir }}/vars/ipa-config.yml"
+    - "{{ real_ansible_dir }}/config.yml"
+    - "{{ real_ansible_dir }}/ansible/vars/global.yml"
+    - "{{ real_ansible_dir }}/ansible/vars/ipa-config.yml"
 
-  tasks:
-    - name: Install Updates
-      dnf:
-        name: "*"
-        state: latest
-
-    - name: "Install Fedora Packages: {{ ipa_client_packages_fedora | join(', ') }}"
-      dnf:
-        name: "{{ ipa_client_packages_fedora }}"
-      when: ansible_distribution == "Fedora"
-
-    - name: "Install RedHat 8 Packages: {{ ipa_client_packages_rhel8 | join(', ') }}"
-      dnf:
-        name: "{{ ipa_client_packages_rhel8 }}"
-      when:
-        - ansible_distribution_file_variety == "RedHat"
-        - ansible_distribution_major_version == "8"
-
-    - name: "Install RedHat 9 Packages: {{ ipa_client_packages_rhel9 | join(', ') }}"
-      dnf:
-        name: "{{ ipa_client_packages_rhel9 }}"
-      when:
-        - ansible_distribution_file_variety == "RedHat"
-        - ansible_distribution_major_version == "9"
-
-    - name: "Join {{ ipaserver_realm }}"
-      command: >
-        ipa-client-install
-        --unattended
-        --principal=admin
-        --password={{ ipaadmin_password }}
-        --force-join
-        --configure-firefox
-        --mkhomedir
-        --ssh-trust-dns
-        --enable-dns-updates
-        --ntp-pool=pool.ntp.org
-      args:
-        creates: /etc/krb5.keytab
-
-    - name: Configure sssd
-      ini_file:
-        path: /etc/sssd/sssd.conf
-        section: nss
-        option: "{{ item.key }}"
-        value: "{{ item.value | string }}"
-      loop: "{{ sssd_params | dict2items }}"
-      vars:
-        sssd_params:
-            default_shell: "/bin/bash"
-            case_sensitive: "False"
-      notify:
-        - Restart SSSD
-
-    - name: Canocalize hostname
-      ini_file:
-        path: /etc/krb5.conf
-        section: libdefaults
-        option: dns_canonicalize_hostname
-        value: "true"
-
-    - name: Write current time into RTC
-      command: hwclock --utc --systohc
-
-  handlers:
-    - name: Restart SSSD
-      service:
-        name: sssd
-        state: restarted
+  roles:
+  - role: freeipa.ansible_freeipa.ipaclient
+    state: present
