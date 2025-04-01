@@ -13,8 +13,28 @@
 #        "192.168.120.0": { ip: "192.168.120.250/24", dns: ["192.168.120.254"], gw: "192.168.120.254" }
 
   tasks:
-    - debug:
-        var: static_network
+    - block:
+        - name: "Install NetworkManager"
+          apt:
+            name: network-manager
+            update_cache: yes
+
+        - name: "Manage all interfaces"
+          copy:
+            content: |
+              [keyfile]
+              unmanaged-devices=none
+            dest: /etc/NetworkManager/conf.d/manage-all.conf
+
+        - name: "Disable netplan"
+          service:
+            name: "{{ item }}"
+            enabled: no
+          with_items:
+            - systemd-networkd.service
+            - systemd-networkd.socket
+            - networkd-dispatcher.service
+      when: ansible_distribution == "Ubuntu"
 
     - name: "Add NetworkManager connections"
       vars:
@@ -66,4 +86,33 @@
         src: "/etc/yum.conf"
         dest: "/etc/dnf/dnf.conf"
         remote_src: true
-      when: ("/etc/yum.conf" | realpath) != ("/etc/dnf/dnf.conf" | realpath)
+      when:
+        - ansible_facts.os_family == "RedHat"
+        - ("/etc/yum.conf" | realpath) != ("/etc/dnf/dnf.conf" | realpath)
+
+    - block:
+        - name: Restart NetworkManager
+          service:
+            name: NetworkManager
+            state: restarted
+
+        - name: "Reboot with NetworkManager + netplan"
+          reboot:
+
+        - name: "Remove current netplan config"
+          file:
+            path: "/etc/netplan/{{ item }}"
+            state: absent
+          with_items:
+            - 50-cloud-init.yaml
+            - 50-vagrant.yaml
+
+        - gather_facts:
+
+        - name: "Set new IP address {{ ansible_eth0.ipv4_secondaries[0].address }} for next connections"
+          set_fact:
+            ansible_host: "{{ ansible_eth0.ipv4_secondaries[0].address }}"
+
+        - name: "Reboot with NetworkManager only"
+          reboot:
+      when: ansible_distribution == "Ubuntu"

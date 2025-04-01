@@ -374,4 +374,15 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/roles/workstation.yml",
                 config_file: "ansible/ansible.cfg"
     end # fedora41-01
+
+    config.vm.define "ubuntu2404-01" do |ubuntu2404|
+            ubuntu2404.vm.box = "alvistack/ubuntu-24.04"
+            ubuntu2404.vm.hostname = "ubuntu2404-01.linux.lab"
+
+            ubuntu2404.vm.provider :libvirt do |libvirt|
+                    libvirt.memory = 4196
+            end
+
+            setup_network(ubuntu2404, networks="Lab_Linux_Internal,Lab_Internet")
+    end # ubuntu2404-01
 end
