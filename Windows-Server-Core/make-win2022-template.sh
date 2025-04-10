@@ -48,7 +48,7 @@ function log {
 
 function cleanup_template {
     log Cleanup
-    if [ -n "$( virsh list --all --name | grep win2022-tmpl )" ]; then
+    if [ -n "$( virsh list --all --name | grep $VM_NAME )" ]; then
         volumes=$(
             virsh domblklist --domain "$VM_NAME" --details |
             awk '/disk/ { print $NF; }'
