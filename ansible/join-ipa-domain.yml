@@ -14,11 +14,45 @@
                 | first
         }}
     real_ansible_dir: "{{ (playbook_path + '/..') | realpath | dirname }}"
+    ipa01_ssh_key: "{{ real_ansible_dir }}/.vagrant/machines/ipa01/libvirt/private_key"
 
   vars_files:
     - "{{ real_ansible_dir }}/config.yml"
     - "{{ real_ansible_dir }}/ansible/vars/global.yml"
     - "{{ real_ansible_dir }}/ansible/vars/ipa-config.yml"
+
+  pre_tasks:
+  - name: "Find /etc/krb5.keytab"
+    stat:
+      path: /etc/krb5.keytab
+    register: stat_keytab
+
+
+  - block:
+    - name: "Find ipa01's IP address"
+      shell:
+        cmd: >-
+            virsh domifaddr --domain Vagrant_ipa01
+            | awk '/192.168.121/ { print $NF; }'
+            | awk -F/ '{ print $1; }'
+      register: ipa01_ip
+      delegate_to: 127.0.0.1
+      become: no
+
+    - name: "Remove host on {{ ipa01_ip.stdout }} if not joined"
+      freeipa.ansible_freeipa.ipahost:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: "{{ ansible_fqdn }}"
+        state: absent
+        update_dns: yes
+      delegate_to: "{{ ipa01_ip.stdout }}"
+      vars:
+        ansible_user: vagrant
+        ansible_private_key_file: "{{ ipa01_ssh_key }}"
+      environment:
+        ANSIBLE_HOST_KEY_CHECKING: False
+        LC_ALL: C.UTF-8
+    when: not stat_keytab.stat.exists
 
   roles:
   - role: freeipa.ansible_freeipa.ipaclient
