@@ -86,11 +86,28 @@
         sn: "{{ item.sn }}"
         email:
           - "{{ item.email }}"
+        update_password: on_create
         password: UserPassword.1
       loop:
         - { name: mustermann, givenname: "Max", sn: "Mustermann", email: "max.mustermann@{{ maildomain }}" }
         - { name: rossi, givenname: "Mario", sn: "Rossi", email: "mario.rossi@{{ maildomain }}" }
         - { name: doe, givenname: "John", sn: "Doe", email: "john.doe@{{ maildomain }}" }
+
+    - name: "Create groups"
+      ipagroup:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: vpn-users
+        description: VPN Users
+
+    - name: "Add users to groups"
+      ipagroup:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: vpn-users
+        action: member
+        user:
+          - rossi
+          - mustermann
+          - doe
 
     - name: "Create autofs map auto.data"
       ipaautomountmap:
