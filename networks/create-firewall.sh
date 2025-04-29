@@ -189,6 +189,7 @@ virt-install \
     --network network=Lab_Internet,model=virtio \
     --network network=Lab_Windows_Internal,model=virtio \
     --network network=Lab_Linux_Internal,model=virtio \
+    --network network=Lab_DMZ,model=virtio \
     --disk path="$VM_NAME.qcow2",device=disk,size="$VM_DISK_SIZE",bus=virtio,pool=default \
     --cdrom "$TMP_ISO" \
     --osinfo freebsd14.0 \
@@ -219,6 +220,7 @@ send_string -m "Dont't configure vlans" n
 send_string -m "Configure WAN interface" vtnet0
 send_string -m "Configure LAN interface" vtnet1
 send_string -m "Configure LAN interface" vtnet2
+send_string -m "Configure DMZ interface" vtnet3
 send_string -m "Confirm reboot" y
 
 my_sleep 60 "Rebooting with configured interfaces..."

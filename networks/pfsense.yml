@@ -9,7 +9,8 @@
 
     ansible_ssh_extra_args: '-o ControlMaster=auto -o ControlPersist=60s -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o TCPKeepAlive=yes'
 
-    openVpn_ip: "192.168.120.250"
+    openVpn_ip: "192.168.101.250"
+    ipa_ip: "192.168.120.20"
     site_vpn_net: "192.168.130.0/24"
     user_vpn_net: "192.168.131.0/24"
     hostname: gw
@@ -22,7 +23,7 @@
         regexp: "<blockpriv></blockpriv>"
         state: absent
 
-    - name: "Aggreagate rules"
+    - name: "Allow SSH, HTTP, HTTPS and ICMP on WAN"
       pfsensible.core.pfsense_aggregate:
         aggregated_rules:
           - interface: wan
@@ -80,12 +81,23 @@
         - name: Lab_Linux
           interface: vtnet2
           ipv4_address: 192.168.120.254
+        - name: Lab_DMZ
+          interface: vtnet3
+          ipv4_address: 192.168.101.254
 
     - name: "Set hostname {{ hostname }}.{{ domain }}"
       pfsensible.core.pfsense_setup:
         hostname: "{{ hostname }}"
         domain: "{{ domain }}"
         timezone: Europe/Vienna
+
+    - name: "Create host alias"
+      pfsensible.core.pfsense_alias:
+        name: host_arachne
+        descr: Arachne OpenVPN server
+        type: host
+        address: "{{ openVpn_ip }}"
+        state: present
 
     - name: "Allow LAN to everywhere"
       pfsensible.core.pfsense_rule:
@@ -98,6 +110,58 @@
       loop:
         - lan
         - opt1
+
+    - name: "Allow from DMZ"
+      pfsensible.core.pfsense_rule:
+        name: "Allow port {{ item.port }} to {{ item.dst }}"
+        interface: opt2
+        protocol: "{{ item.proto | default('tcp') }}"
+        destination: "{{ item.dst }}"
+        destination_port: "{{ item.port }}"
+        source: host_arachne
+        quick: false
+        state: present
+      with_items:
+        - dst: "192.168.101.254"
+          port: 53
+          proto: tcp/udp
+        - dst: "{{ ipa_ip }}"
+          port: 53
+          proto: tcp/udp
+        - dst: "{{ ipa_ip }}"
+          port: 88
+          proto: tcp/udp
+        - dst: "{{ ipa_ip }}"
+          port: 389
+        - dst: "{{ ipa_ip }}"
+          port: 443
+        - dst: "{{ ipa_ip }}"
+          port: 636
+
+    - name: "Allow all from VPNs to LAN"
+      pfsensible.core.pfsense_rule:
+        name: "Allow all from {{ item }} to LAN"
+        interface: opt2
+        destination: any
+        source: "{{ item }}"
+        quick: false
+        state: present
+      with_items:
+        - "{{ user_vpn_net }}"
+        - "{{ site_vpn_net }}"
+
+    - name: "Allow ICMP"
+      pfsensible.core.pfsense_rule:
+        name: "Allow ICMP from DMZ to {{ item }}"
+        interface: opt2
+        destination: "{{ item }}"
+        source: host_arachne
+        protocol: icmp
+        quick: false
+        state: present
+      with_items:
+        - 192.168.101.254
+        - 192.168.120.20
 
     - name: "Configure DNS resolver"
       pfsensible.core.pfsense_dns_resolver:
@@ -115,8 +179,11 @@
     - name: "Remove forward_tls_upstream"
       lineinfile:
         path: /conf/config.xml
-        regexp: "<forward_tls_upstream>.*</forward_tls_upstream>"
+        regexp: "{{ item }}"
         state: absent
+      with_items:
+        - "<forward_tls_upstream>.*</forward_tls_upstream>"
+        - "<dnssec>.*</dnssec>"
 
     - name: "Forward openVpn to {{ openVpn_ip }}"
       pfsensible.core.pfsense_nat_port_forward:
@@ -124,7 +191,7 @@
         interface: wan
         source: any
         destination: "(self):1194"
-        target: "{{ openVpn_ip }}:1194"
+        target: host_arachne:1194
         protocol: tcp/udp
         state: present
         associated_rule: pass
@@ -132,7 +199,7 @@
     - name: "Create openVpn Gateway"
       pfsensible.core.pfsense_gateway:
         name: "openVpn"
-        interface: opt1
+        interface: opt2
         gateway: "{{ openVpn_ip }}"
         state: present
 
