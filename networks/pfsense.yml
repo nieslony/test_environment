@@ -137,6 +137,8 @@
           port: 443
         - dst: "{{ ipa_ip }}"
           port: 636
+        - dst: "192.168.100.0/24"
+          port: 22
 
     - name: "Allow all from VPNs to LAN"
       pfsensible.core.pfsense_rule:
