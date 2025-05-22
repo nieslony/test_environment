@@ -378,6 +378,7 @@ Vagrant.configure("2") do |config|
     config.vm.define "fedora42-01" do |fedora4201|
         fedora4201.vm.box = "fedora/42-cloud-base"
         fedora4201.vm.hostname = "fedora42-01.linux.lab"
+        fedora4201.nfs.functional = false
 
         fedora4201.vm.provider :libvirt do |libvirt|
             libvirt.memory = 4196
