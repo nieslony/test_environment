@@ -96,15 +96,19 @@
     - name: "Create groups"
       ipagroup:
         ipaadmin_password: "{{ ipaadmin_password }}"
-        name: vpn-users
-        description: VPN Users
+        name: "{{ item.name }}"
+        description: "{{ item.description }}"
+      with_items:
+        - { name: vpn-users, description: "VPN Users" }
 
     - name: "Add users to groups"
       ipagroup:
         ipaadmin_password: "{{ ipaadmin_password }}"
-        name: vpn-users
+        name: "{{ item.key }}"
         action: member
-        user:
+        user: "{{ item.value }}"
+      with_dict:
+        vpn-users:
           - rossi
           - mustermann
           - doe
