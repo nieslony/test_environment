@@ -377,6 +377,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.define "fedora42-01" do |fedora4201|
         fedora4201.vm.box = "fedora/42-cloud-base"
+        fedora4201.vm.box_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Vagrant-libvirt-42-1.1.x86_64.vagrant.libvirt.box"
         fedora4201.vm.hostname = "fedora42-01.linux.lab"
         fedora4201.nfs.functional = false
 
