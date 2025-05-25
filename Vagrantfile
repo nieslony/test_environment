@@ -55,7 +55,7 @@ Vagrant.configure("2") do |config|
             :bus => "usb"
     end
 
-    def prepare_alma(cfg)
+    def prepare_alma(cfg, ignore_disks = [])
         cfg.vm.box = "almalinux/9"
 
         cfg.vm.provider :libvirt do |libvirt|
@@ -64,7 +64,10 @@ Vagrant.configure("2") do |config|
 
         cfg.vm.provision "ansible",
                 playbook: "ansible/create-LVM-and-swap.yml",
-                config_file: "ansible/ansible.cfg"
+                config_file: "ansible/ansible.cfg",
+                extra_vars: {
+                        ignore_disks: ignore_disks
+                        }
 
         cfg.vm.provision "Sync with RTC on host",
                 type: "ansible",
@@ -204,9 +207,13 @@ Vagrant.configure("2") do |config|
             libvirt.memory = 1024
         end
 
-        prepare_alma(fileserver)
+        prepare_alma(fileserver, ignore_disks=["vdc"])
         setup_network(fileserver)
         provision_ipa_member(fileserver)
+
+        fileserver.vm.provider :libvirt do |libvirt|
+                libvirt.storage :file, :size => '20G'
+        end
 
         fileserver.vm.provision "Apply Roles",
                 type: "ansible",

@@ -3,7 +3,10 @@
   become: true
 
   vars:
-    disks: "{{ ansible_devices.keys() | select('match', '^vd[b-z]$') }}"
+    disks: "{{ ansible_devices.keys()
+        | select('match', '^vd[b-z]$')
+        | difference( ignore_disks | default([]) )
+        }}"
     partitions: >
       {%- set parts = [] -%}
       {%- for d in disks -%}
@@ -13,6 +16,9 @@
     vg_name: system
 
   tasks:
+    - debug:
+        msg: "Ignoring disks: {{ ignore_disks | default([]) }}"
+
     - name: "Install LVM tools"
       dnf:
         name: lvm2
