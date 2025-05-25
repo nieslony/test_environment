@@ -70,4 +70,6 @@
         src: "/etc/yum.conf"
         dest: "/etc/dnf/dnf.conf"
         remote_src: true
-      when: ("/etc/yum.conf" | realpath) != ("/etc/dnf/dnf.conf" | realpath)
+      when:
+        - ansible_facts.os_family == "RedHat"
+        - ("/etc/yum.conf" | realpath) != ("/etc/dnf/dnf.conf" | realpath)
