@@ -24,6 +24,7 @@ Vagrant.configure("2") do |config|
     config.vagrant.plugins = [
             "vagrant-libvirt",
             "vagrant-proxyconf",
+            "vagrant-reload",
             "vagrant-timezone",
             "winrm",
             "winrm-elevated"
@@ -80,6 +81,7 @@ Vagrant.configure("2") do |config|
 
             cfg.vm.provision "Setup Network",
                 type: "ansible",
+                # verbose: "vvv",
                 playbook: "ansible/network.yml",
                 config_file: "ansible/ansible.cfg"
     end
@@ -323,6 +325,24 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/roles/workstation.yml",
                 config_file: "ansible/ansible.cfg"
     end # almalinux9-01
+
+    config.vm.define "tumbleweed-01" do |tumbleweed01|
+            tumbleweed01.vm.box = "opensuse/Tumbleweed.x86_64"
+            tumbleweed01.vm.hostname = "tumbleweed-01.linux.lab"
+
+            tumbleweed01.vm.provision "Install python3",
+                type: "shell",
+                inline: <<-'EOF'
+                zypper --quiet dist-upgrade  -y
+                zypper --quiet install       -y python313 NetworkManager
+                zypper --quiet remove        -y python-base wicked-service wicked
+                systemctl enable NetworkManager
+                EOF
+                tumbleweed01.vm.provision :reload
+
+                setup_network(tumbleweed01, networks="Lab_Linux_Internal")
+                provision_ipa_member(tumbleweed01)
+    end
 
     config.vm.define "fedora40-01" do |fedora4001|
         fedora4001.vm.box = "fedora/40-cloud-base"
