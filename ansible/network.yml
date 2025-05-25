@@ -39,7 +39,9 @@
         dns4: "{{ has_static_ip | ternary(static_network[network].dns, omit) }}"
         gw4: "{{ has_static_ip | ternary(static_network[network].gw, omit) }}"
         autoconnect: "{{ (conn_name != 'Internet') or ((ansible_facts.interfaces | length) == 3) }}"
-      when: ansible_facts[item].type == "ether"
+      when:
+        - ansible_facts[item].ipv4 is defined
+        - ansible_facts[item].type == "ether"
       loop: "{{ ansible_facts.interfaces }}"
 
     - name: "Find NetworkManager connections"
