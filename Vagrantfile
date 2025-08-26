@@ -55,8 +55,8 @@ Vagrant.configure("2") do |config|
             :bus => "usb"
     end
 
-    def prepare_alma(cfg)
-        cfg.vm.box = "almalinux/9"
+    def prepare_alma(cfg, version)
+        cfg.vm.box = "almalinux/" + version
 
         cfg.vm.provider :libvirt do |libvirt|
             libvirt.storage :file, :size => '16G'
@@ -141,7 +141,7 @@ Vagrant.configure("2") do |config|
                 :netmask => "255.255.255.0",
                 :hostname => true
 
-        prepare_alma(ipa01)
+        prepare_alma(ipa01, "9")
         ipa01.vm.provision "Setup Network",
                 type: "ansible",
                 playbook: "ansible/network.yml",
@@ -183,7 +183,7 @@ Vagrant.configure("2") do |config|
             libvirt.storage :file, :size => '50G'
         end
 
-        prepare_alma(mail)
+        prepare_alma(mail, "9")
         setup_network(mail)
         provision_ipa_member(mail)
 
@@ -204,7 +204,7 @@ Vagrant.configure("2") do |config|
             libvirt.memory = 1024
         end
 
-        prepare_alma(fileserver)
+        prepare_alma(fileserver, "9")
         setup_network(fileserver)
         provision_ipa_member(fileserver)
 
@@ -217,7 +217,7 @@ Vagrant.configure("2") do |config|
     config.vm.define "webserver" do |webserver|
         webserver.vm.hostname = "webserver.linux.lab"
 
-        prepare_alma(webserver)
+        prepare_alma(webserver, "9")
         setup_network(webserver)
         provision_ipa_member(webserver)
 
@@ -233,7 +233,7 @@ Vagrant.configure("2") do |config|
     config.vm.define "printserver" do |printserver|
         printserver.vm.hostname = "printserver.linux.lab"
 
-        prepare_alma(printserver)
+        prepare_alma(printserver, "9")
         setup_network(printserver)
         provision_ipa_member(printserver)
 
@@ -246,7 +246,7 @@ Vagrant.configure("2") do |config|
     config.vm.define "wiki" do |wiki|
         wiki.vm.hostname = "wiki.linux.lab"
 
-        prepare_alma(wiki)
+        prepare_alma(wiki, "9")
         setup_network(wiki)
         provision_ipa_member(wiki)
 
@@ -263,7 +263,7 @@ Vagrant.configure("2") do |config|
                 libvirt.usb :bus => wifi_nix_usb_bus, :device => wifi_nix_usb_dev
         end
 
-        prepare_alma(accesspoint)
+        prepare_alma(accesspoint, "9")
         setup_network(accesspoint)
         provision_ipa_member(accesspoint)
 
@@ -280,7 +280,7 @@ Vagrant.configure("2") do |config|
             libvirt.storage :file, :size => '30G'
         end
 
-        prepare_alma(gerbera)
+        prepare_alma(gerbera, "9")
         setup_network(gerbera)
         provision_ipa_member(gerbera)
 
@@ -300,7 +300,7 @@ Vagrant.configure("2") do |config|
             libvirt.memory = 1024
         end
 
-        prepare_alma(remote_host)
+        prepare_alma(remote_host, "9")
         setup_network(remote_host, networks="Lab_Internet")
 
         remote_host.vm.provision "Apply Roles",
@@ -311,7 +311,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.define "almalinux9-01" do |almalinux901|
         almalinux901.vm.hostname = "almalinux9-01.linux.lab"
-        prepare_alma(almalinux901)
+        prepare_alma(almalinux901, "9")
 
         almalinux901.vm.provider :libvirt do |libvirt|
             libvirt.memory = 4096
@@ -325,6 +325,23 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/roles/workstation.yml",
                 config_file: "ansible/ansible.cfg"
     end # almalinux9-01
+
+    config.vm.define "almalinux10-01" do |almalinux1001|
+            almalinux1001.vm.hostname = "almalinux10-01.linux.lab"
+            prepare_alma(almalinux1001, "10")
+
+            almalinux1001.vm.provider :libvirt do |libvirt|
+                    libvirt.memory = 4096
+            end
+
+            setup_network(almalinux1001, networks="Lab_Linux_Internal,Lab_Internet")
+            provision_ipa_member(almalinux1001)
+
+            almalinux1001.vm.provision "Apply Roles",
+                type: "ansible",
+                playbook: "ansible/roles/workstation.yml",
+                config_file: "ansible/ansible.cfg"
+    end # almalinux10-01
 
     config.vm.define "tumbleweed-01" do |tumbleweed01|
             tumbleweed01.vm.box = "opensuse/Tumbleweed.x86_64"
@@ -341,7 +358,7 @@ Vagrant.configure("2") do |config|
                 tumbleweed01.vm.provision :reload
 
                 setup_network(tumbleweed01, networks="Lab_Linux_Internal")
-                provision_ipa_member(tumbleweed01)
+                # provision_ipa_member(tumbleweed01)
     end
 
     config.vm.define "fedora40-01" do |fedora4001|
