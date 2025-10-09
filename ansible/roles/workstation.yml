@@ -47,6 +47,7 @@
   roles:
     - gui
     - evolution
+    - thunderbird
     - webbrowser
     - autofs
     - arachnecdl
