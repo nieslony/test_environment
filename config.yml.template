@@ -6,3 +6,7 @@ ipa:
 
 dc:
     admin_password: "ChangeMe"
+
+keycloak:
+    admin_user: kc-admin
+    admin_password: "ChangeMe"

@@ -12,6 +12,8 @@
         - "ipa-server-dns"
         - "ipa-server-trust-ad"
 
+    keycloak_admin_password: "{{ keycloak.admin_password }}"
+
   collections:
     - freeipa.ansible_freeipa
 

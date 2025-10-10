@@ -31,8 +31,10 @@
           url: "http://192.168.120.254"
         - name: "Wifi Settings"
           url: "https://accesspoint.linux.lab/wifi"
-        - name: "Who Am I"
-          url: "http://www.linux.lab/whoami"
+        - name: "Who Am I (Kerberos)"
+          url: "http://www.linux.lab/whoami-krb5"
+        - name: "Who Am I (OpenID)"
+          url: "http://www.linux.lab/whoami-oid"
 
     gui_print_server: printserver.linux.lab
 

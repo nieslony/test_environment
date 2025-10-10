@@ -28,6 +28,14 @@
     webserver_infopipe_enabled: yes
     webserver_constrained_delegation_enabled: yes
 
+    webserver_oidc_enabled: true
+    webserver_oidc_url: http://ipa01.linux.lab:8180
+    webserver_oidc_admin_user: kc-admin
+    webserver_oidc_admin_password: "{{ keycloak.admin_password }}"
+    webserver_oidc_realm:  "{{ organization }}"
+    webserver_oidc_client_id: "{{ ansible_fqdn }}"
+    webserver_oidc_client_secret: Ieshaephahgheej1
+
   vars_files:
     - "{{ real_ansible_dir }}/../config.yml"
     - "{{ real_ansible_dir }}/vars/global.yml"
