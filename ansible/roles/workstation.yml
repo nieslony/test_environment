@@ -45,6 +45,7 @@
       include_tasks: "{{ real_ansible_dir }}/enable-el-repos.yml"
 
   roles:
+    - default-packages
     - gui
     - evolution
     - thunderbird
