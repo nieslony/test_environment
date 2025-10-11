@@ -88,10 +88,33 @@
           - "{{ item.email }}"
         update_password: on_create
         password: UserPassword.1
-      loop:
+      with_items:
         - { name: mustermann, givenname: "Max", sn: "Mustermann", email: "max.mustermann@{{ maildomain }}" }
         - { name: rossi, givenname: "Mario", sn: "Rossi", email: "mario.rossi@{{ maildomain }}" }
         - { name: doe, givenname: "John", sn: "Doe", email: "john.doe@{{ maildomain }}" }
+
+    - name: "Upload fotos"
+      copy:
+        src: "files/{{ item }}"
+        dest: /tmp
+      with_items:
+        - rossi.jpeg
+        - mustermann.jpeg
+        - doe.jpeg
+
+    - name: "Set Avatars in LDAP"
+      shell:
+        cmd: |
+          echo {{ ipaadmin_password }} | kinit admin
+          "ldapmodify <<<$'dn: uid={{ item }},cn=users,cn=accounts,dc=linux,dc=lab\nchangetype: modify\nadd: jpegPhoto\njpegPhoto:< file:///tmp/{{ item }}.jpeg\n'"
+          kdestroy
+      with_items:
+        - rossi
+        - mustermann
+        - doe
+      register: avatar_in_ldap
+      changed_when: avatar_in_ldap.rc == 0
+      failed_when: avatar_in_ldap.rc != 0 and avatar_in_ldap.rc != 20
 
     - name: "Create groups"
       ipagroup:
