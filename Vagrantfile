@@ -172,6 +172,11 @@ Vagrant.configure("2") do |config|
                 extra_vars: {
                         maildomain: global_config["global_domain"]
                         }
+
+        ipa01.vm.provision "Apply Roles",
+                type: "ansible",
+                playbook: "ansible/roles/keycloak.yml",
+                config_file: "ansible/ansible.cfg"
     end # ipa01
 
     config.vm.define "mail" do |mail|

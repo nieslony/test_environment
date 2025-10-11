@@ -1,0 +1,28 @@
+- name: Mail Roles
+  hosts: all
+  become: yes
+
+  vars:
+    playbook_path: |-
+        {{
+            (
+                lookup('file', '/proc/self/cmdline')
+                    | regex_replace('\u0000',' ')
+            ).split()
+                | select('match','^.*[.]ya?ml$')
+                | list
+                | first
+        }}
+    real_ansible_dir: "{{ (playbook_path + '/..') | realpath | dirname }}"
+
+  vars_files:
+    - "{{ real_ansible_dir }}/../config.yml"
+    - "{{ real_ansible_dir }}/vars/global.yml"
+    - "{{ real_ansible_dir }}/vars/ipa-config.yml"
+
+  pre_tasks:
+    - name: "Enable EL repos"
+      include_tasks: "{{ real_ansible_dir }}/enable-el-repos.yml"
+
+  roles:
+    - keycloak
