@@ -108,8 +108,10 @@
       shell:
         cmd: |
           echo {{ ipaadmin_password }} | kinit admin
-          "ldapmodify <<<$'dn: uid={{ item }},cn=users,cn=accounts,dc=linux,dc=lab\nchangetype: modify\nadd: jpegPhoto\njpegPhoto:< file:///tmp/{{ item }}.jpeg\n'"
+          ldapmodify <<<$'dn: uid={{ item }},cn=users,cn=accounts,dc=linux,dc=lab\nchangetype: modify\nadd: jpegPhoto\njpegPhoto:< file:///tmp/{{ item }}.jpeg\n'
+          ret=$?
           kdestroy
+          exit $ret
       with_items:
         - rossi
         - mustermann
