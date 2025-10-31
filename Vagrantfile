@@ -444,4 +444,32 @@ Vagrant.configure("2") do |config|
                 playbook: "ansible/roles/workstation.yml",
                 config_file: "ansible/ansible.cfg"
     end # fedora42-01
+
+    config.vm.define "fedora43-01" do |fedora4301|
+            fedora4301.vm.box = "fedora/43-cloud-base"
+            fedora4301.vm.box_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/x86_64/images/Fedora-Cloud-Base-Vagrant-libvirt-43-1.6.x86_64.vagrant.libvirt.box"
+            fedora4301.vm.hostname = "fedora43-01.linux.lab"
+            fedora4301.nfs.functional = false
+
+            fedora4301.vm.provider :libvirt do |libvirt|
+                    libvirt.memory = 4196
+                    libvirt.machine_virtual_size = 43
+            end
+
+            fedora4301.vm.provision "Resize /",
+                type: "shell",
+                inline: <<-SHELL
+                growpart /dev/vda 4
+                btrfs filesystem resize max /
+                dnf install -y python3-libdnf5
+                SHELL
+
+                setup_network(fedora4301, networks="Lab_Linux_Internal,Lab_Internet")
+                provision_ipa_member(fedora4301)
+
+                fedora4301.vm.provision "Apply Roles",
+                                type: "ansible",
+                                playbook: "ansible/roles/workstation.yml",
+                                config_file: "ansible/ansible.cfg"
+    end # fedora43-01
 end
