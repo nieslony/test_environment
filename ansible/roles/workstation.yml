@@ -46,6 +46,15 @@
     - name: "Enable EL repos"
       include_tasks: "{{ real_ansible_dir }}/enable-el-repos.yml"
 
+    - name: "Overwrite dracut.conf"
+      copy:
+        dest: /etc/dracut.conf.d/small.conf
+        content: |
+          compress=xz
+          aggressive_strip=yes
+          do_strip=yes
+          hostonly=yes
+
   roles:
     - default-packages
     - gui
