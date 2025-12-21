@@ -27,7 +27,6 @@
       path: /etc/krb5.keytab
     register: stat_keytab
 
-
   - block:
     - name: "Find ipa01's IP address"
       shell:
@@ -57,3 +56,15 @@
   roles:
   - role: freeipa.ansible_freeipa.ipaclient
     state: present
+
+  post_tasks:
+  - name: "Configure LDAP"
+    lineinfile:
+      path: /etc/ldap/ldap.conf
+      line: "{{ item.key }} {{ item.value }}"
+      regex: "^{{ item.key }}\\s+{{ item.value }}$"
+    with_dict:
+      SASL_NOCANON: "on"
+      # BASE: "{{ ldap_base_dn }}"
+      # SASL_MECH: "GSSAPI"
+    when:  ansible_os_family == "Debian"
