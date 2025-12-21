@@ -72,6 +72,13 @@ Vagrant.configure("2") do |config|
                 config_file: "ansible/ansible.cfg"
     end
 
+    def prepare_debian(cfg)
+        cfg.vm.provision "Configure Debian",
+                type: "ansible",
+                playbook: "ansible/debian.yml",
+                config_file: "ansible/ansible.cfg"
+    end
+
     def setup_network(cfg, networks="Lab_Linux_Internal")
             networks.split(/ *, */, -1).each() do |nw|
                     cfg.vm.network :private_network,
@@ -472,4 +479,23 @@ Vagrant.configure("2") do |config|
                                 playbook: "ansible/roles/workstation.yml",
                                 config_file: "ansible/ansible.cfg"
     end # fedora43-01
+
+    config.vm.define "debian13-01" do |debian1301|
+            debian1301.vm.box = "cloud-image/debian-13"
+            debian1301.vm.hostname = "debian13-01.linux.lab"
+
+            debian1301.vm.provider :libvirt do |libvirt|
+                    libvirt.memory = 4196
+                    libvirt.machine_virtual_size = 43
+            end
+
+            prepare_debian(debian1301)
+            setup_network(debian1301, networks="Lab_Linux_Internal,Lab_Internet")
+            provision_ipa_member(debian1301)
+
+            debian1301.vm.provision "Apply Roles",
+                                type: "ansible",
+                                playbook: "ansible/roles/workstation.yml",
+                                config_file: "ansible/ansible.cfg"
+    end # debian13-01
 end

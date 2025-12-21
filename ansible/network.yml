@@ -14,6 +14,18 @@
 #        "192.168.120.0": { ip: "192.168.120.250/24", dns: ["192.168.120.254"], gw: "192.168.120.254" }
 
   tasks:
+    - block:
+      - name: "Install network-manager"
+        apt:
+          name: network-manager
+          state: latest
+          update_cache: yes
+
+      - name: "Set hostname {{ ansible_fqdn }}"
+        hostname:
+          name: "{{ ansible_fqdn }}"
+      when:  ansible_os_family == "Debian"
+
     - debug:
         var: ansible_facts.interfaces
 
@@ -49,6 +61,9 @@
       register: nmcli_con_show
       changed_when: no
 
+    - debug:
+        var: nmcli_con_show
+
     - name: "Remove NetworkManager connections"
       nmcli:
         conn_name: "{{ item.split(':')[0] }}"
@@ -56,8 +71,12 @@
       when:
         - item.split(":")[1] == "802-3-ethernet"
         - not item.split(":")[0] in network_names.values()
-      loop: "{{ nmcli_con_show.stdout_lines }}"
       register: remove_connections
+      failed_when:
+        - remove_connections.rc is defined
+        - remove_connections.rc != 0
+        - remove_connections.rc != 10
+      with_items: "{{ nmcli_con_show.stdout_lines }}"
 
     - name: "Removing entries like 127.0.0.1 {{ ansible_hostname }} from /etc/hosts"
       lineinfile:

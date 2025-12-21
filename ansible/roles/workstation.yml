@@ -46,6 +46,11 @@
     - name: "Enable EL repos"
       include_tasks: "{{ real_ansible_dir }}/enable-el-repos.yml"
 
+    - name: "Find dracut.conf"
+      stat:
+        path: /etc/dracut.conf.d
+      register: stat_dracut_conf
+
     - name: "Overwrite dracut.conf"
       copy:
         dest: /etc/dracut.conf.d/small.conf
@@ -54,6 +59,7 @@
           aggressive_strip=yes
           do_strip=yes
           hostonly=yes
+      when: stat_dracut_conf.stat.exists
 
   roles:
     - default-packages
@@ -62,8 +68,8 @@
     - thunderbird
     - webbrowser
     - autofs
-    - arachnecdl
-    - developer-workstation
+#    - arachnecdl
+#    - developer-workstation
 
   post_tasks:
     - name: Set x11 keyboard layout
