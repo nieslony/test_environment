@@ -1,0 +1,28 @@
+- name: "Configure Network"
+  hosts: all
+  become: true
+
+  tasks:
+    - name: "Configure Debian sources"
+      lineinfile:
+        path: /etc/apt/sources.list.d/debian.sources
+        search_string: "URIs: mirror+file:///etc/apt/mirrors/{{ item }}.list"
+        line: "URIs: http://deb.debian.org/{{ item }}"
+      with_items:
+        - debian
+        - debian-security
+
+    - name: "Install Debian packages"
+      apt:
+        name:
+          - libldap-common
+          - ldap-utils
+          - passwd
+        state: latest
+        update_cache: yes
+      when: ansible_facts.os_family == "Debian"
+
+    - name: "Set vagrant's shell"
+      user:
+        name: vagrant
+        shell: /bin/bash
