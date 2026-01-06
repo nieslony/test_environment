@@ -30,5 +30,5 @@
 
   roles:
     - default-packages
-    - mailserver
     - nextcloud
+    - mailserver
