@@ -176,20 +176,6 @@
         - { name: autoconfig, type: CNAME, value: mail.linux.lab. }
         - { name: gw, type: A, value: "192.168.120.254" }
 
-    - name: "Create trust to AD"
-      ipatrust:
-        realm: WINDOWS.LAB
-        state: present
-        admin: Administrator
-        password: "{{ dc.admin_password }}"
-        server: dc01.windows.lab
-        two_way: true
-        ipaadmin_password: "{{ ipaadmin_password }}"
-      environment:
-        LANG: "en_US@UTF-8"
-        LANGUAGE: "en_US@UTF-8"
-        LC_ALL: "C.UTF-8"
-
     - name: Configure sssd
       ini_file:
         path: /etc/sssd/sssd.conf
@@ -204,3 +190,19 @@
 
     - name: Write current time into RTC
       command: hwclock --utc --systohc
+
+    - name: "Create trust to AD"
+      ipatrust:
+        realm: WINDOWS.LAB
+        state: present
+        admin: Administrator
+        password: "{{ dc.admin_password }}"
+        server: dc01.windows.lab
+        two_way: true
+        ipaadmin_password: "{{ ipaadmin_password }}"
+      environment:
+        LANG: "en_US@UTF-8"
+        LANGUAGE: "en_US@UTF-8"
+        LC_ALL: "C.UTF-8"
+      tags:
+        - ad_trust
