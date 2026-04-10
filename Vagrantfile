@@ -40,16 +40,16 @@ Vagrant.configure("2") do |config|
         libvirt.cpus = 2
         libvirt.memory = 2048
         libvirt.clock_offset = 'utc'
-        libvirt.graphics_type = 'spice'
-        libvirt.graphics_ip = "0.0.0.0"
-        libvirt.graphics_port = -1
+        # libvirt.graphics_type = 'spice'
+        # libvirt.graphics_ip = "0.0.0.0"
+        # libvirt.graphics_port = -1
         libvirt.keymap = "de"
         libvirt.channel :type => 'unix',
             :target_name => 'org.qemu.guest_agent.0',
             :target_type => 'virtio'
-        libvirt.channel :type => 'spicevmc',
-            :target_name => 'com.redhat.spice.0',
-            :target_type => 'virtio'
+        # libvirt.channel :type => 'spicevmc',
+        #     :target_name => 'com.redhat.spice.0',
+        #     :target_type => 'virtio'
         libvirt.video_type = "qxl"
         libvirt.input :type => "mouse",
             :bus => "usb"
@@ -108,6 +108,7 @@ Vagrant.configure("2") do |config|
 
         dc01.vm.provider :libvirt do |libvirt|
                 libvirt.clock_offset = 'localtime'
+                libvirt.memory = 4096
         end
 
         dc01.vm.network :private_network,
@@ -135,6 +136,13 @@ Vagrant.configure("2") do |config|
                 :path => "PowerShell/network.ps1",
                 :privileged => true,
                 :run => "always"
+
+        dc01.vm.provision "shell",
+                :name => "Install Updates",
+                :path => "Windows-Server-Core/Install-updates.ps1",
+                :privileged => true,
+                :run => "always",
+                :reboot => true
     end # dc01
 
     config.vm.define "ipa01" do |ipa01|
