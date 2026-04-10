@@ -160,6 +160,7 @@
         name: test.lab
         allow_sync_ptr: yes
         dynamic_update: true
+        skip_overlap_check: true
       environment:
         LANG: "en_US@UTF-8"
         LANGUAGE: "en_US@UTF-8"

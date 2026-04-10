@@ -156,7 +156,7 @@ Vagrant.configure("2") do |config|
                 :netmask => "255.255.255.0",
                 :hostname => true
 
-        prepare_alma(ipa01, "9")
+        prepare_alma(ipa01, "10")
         ipa01.vm.provision "Setup Network",
                 type: "ansible",
                 playbook: "ansible/network.yml",
@@ -174,7 +174,7 @@ Vagrant.configure("2") do |config|
         ipa01.vm.provision "shell",
                 name: "Set locale",
                 inline: <<-'SHELL'
-                if !  rpm -qa | grep -q langgg ; echo $? ; then
+                if !  rpm -qa | grep -q lang ; echo $? ; then
                         dnf install -y langpacks-en
                 fi
                 localectl set-locale en_US@UTF-8
