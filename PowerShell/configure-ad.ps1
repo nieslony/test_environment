@@ -55,6 +55,7 @@ Add-DnsServerConditionalForwarderZone `
 Add-DnsServerConditionalForwarderZone `
     -Name "120.168.192.in-addr.arpa" `
     -MasterServer "192.168.120.20"
+Add-DnsServerForwarder -IpAddress "192.168.110.254"
 
 Log-Message "Disable listen on management ip for DNS"
 $dnsServerSetting = Get-DnsServerSetting -All
