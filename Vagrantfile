@@ -186,6 +186,50 @@ Vagrant.configure("2") do |config|
                         }
     end # ipa01
 
+    config.vm.define "ipa02" do |ipa02|
+        ipa02.vm.hostname = "ipa02.linux.lab"
+
+        ipa02.vm.network :private_network,
+                :dev => "virbr3",
+                :libvirt__autostart => "true",
+                :libvirt__forward_mode => "route",
+                :ip => "192.168.120.21",
+                :netmask => "255.255.255.0",
+                :hostname => true
+
+        prepare_alma(ipa02, "10")
+        ipa02.vm.provision "Setup Network",
+                type: "ansible",
+                playbook: "ansible/network.yml",
+                config_file: "ansible/ansible.cfg",
+                extra_vars: {
+                        static_network: {
+                                "192.168.120.0": {
+                                        ip: "192.168.120.21/24",
+                                        dns: ["192.168.120.254"],
+                                        gw: "192.168.120.254"
+                                        }
+                                }
+                        }
+
+        ipa02.vm.provision "shell",
+                name: "Set locale",
+                inline: <<-'SHELL'
+                if !  rpm -qa | grep -q lang ; echo $? ; then
+                        dnf install -y langpacks-en
+                fi
+                localectl set-locale en_US@UTF-8
+                SHELL
+
+        ipa02.vm.provision "Setup IPA replica",
+                type: "ansible",
+                playbook: "ansible/ipa02.yml",
+                config_file: "ansible/ansible.cfg",
+                extra_vars: {
+                        maildomain: global_config["global_domain"]
+                        }
+    end # ipa02
+
     config.vm.define "mail" do |mail|
         mail.vm.hostname = "mail.linux.lab"
 
@@ -491,7 +535,7 @@ Vagrant.configure("2") do |config|
 
             prepare_debian(debian1301)
             setup_network(debian1301, networks="Lab_Linux_Internal,Lab_Internet")
-            provision_ipa_member(debian1301)
+            provision_ipa_member(debian1301, ["clients"])
 
             debian1301.vm.provision "Apply Roles",
                                 type: "ansible",

@@ -14,7 +14,9 @@ ipaserver_auto_forwarders: yes
 ipaserver_no_host_dns: yes
 
 ipareplica_domain: linux.lab
-ipaserver_realm: LINUX.LAB
+ipareplica_realm: LINUX.LAB
+ipareplica_no_dnssec_validation: yes
+ipareplica_auto_forwarders: yes
 ipareplica_setup_ca: true
 ipareplica_setup_kra: true
 ipareplica_setup_dns: true

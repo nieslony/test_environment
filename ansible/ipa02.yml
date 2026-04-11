@@ -1,0 +1,25 @@
+- name: Setup FreeIpa
+  hosts: all
+  become: true
+
+  vars_files:
+    - "../config.yml"
+    - "vars/ipa-config.yml"
+
+  vars:
+    ipa_server_packages:
+        - "ipa-server"
+        - "ipa-server-dns"
+        - "ipa-server-trust-ad"
+
+  environment:
+    LC_ALL: "C.UTF-8"
+
+  pre_tasks:
+    - name: "Install Updates"
+      dnf:
+        name: "*"
+        state: latest
+
+  roles:
+    - freeipa.ansible_freeipa.ipareplica
