@@ -229,9 +229,9 @@ Vagrant.configure("2") do |config|
     config.vm.define "webserver" do |webserver|
         webserver.vm.hostname = "webserver.linux.lab"
 
-        prepare_alma(webserver, "9")
+        prepare_alma(webserver, "10")
         setup_network(webserver)
-        provision_ipa_member(webserver)
+        provision_ipa_member(webserver, ["servers", "web-servers"])
 
         webserver.vm.provision "Apply Roles",
                 type: "ansible",
@@ -245,9 +245,9 @@ Vagrant.configure("2") do |config|
     config.vm.define "printserver" do |printserver|
         printserver.vm.hostname = "printserver.linux.lab"
 
-        prepare_alma(printserver, "9")
+        prepare_alma(printserver, "10")
         setup_network(printserver)
-        provision_ipa_member(printserver)
+        provision_ipa_member(printserver, ["servers"])
 
         printserver.vm.provision "Apply Roles",
                 type: "ansible",
@@ -258,9 +258,9 @@ Vagrant.configure("2") do |config|
     config.vm.define "wiki" do |wiki|
         wiki.vm.hostname = "wiki.linux.lab"
 
-        prepare_alma(wiki, "9")
+        prepare_alma(wiki, "10")
         setup_network(wiki)
-        provision_ipa_member(wiki)
+        provision_ipa_member(wiki, ["servers", "web-servers"])
 
         wiki.vm.provision "Apply Roles",
                 type: "ansible",
@@ -275,7 +275,7 @@ Vagrant.configure("2") do |config|
                 libvirt.usb :bus => wifi_nix_usb_bus, :device => wifi_nix_usb_dev
         end
 
-        prepare_alma(accesspoint, "9")
+        prepare_alma(accesspoint, "10")
         setup_network(accesspoint)
         provision_ipa_member(accesspoint)
 
@@ -292,9 +292,9 @@ Vagrant.configure("2") do |config|
             libvirt.storage :file, :size => '30G'
         end
 
-        prepare_alma(gerbera, "9")
+        prepare_alma(gerbera, "10")
         setup_network(gerbera)
-        provision_ipa_member(gerbera)
+        provision_ipa_member(gerbera, ["servers"])
 
         gerbera.vm.provision "Apply Roles",
                 type: "ansible",
@@ -312,7 +312,7 @@ Vagrant.configure("2") do |config|
             libvirt.memory = 1024
         end
 
-        prepare_alma(remote_host, "9")
+        prepare_alma(remote_host, "10")
         setup_network(remote_host, networks="Lab_Internet")
 
         remote_host.vm.provision "Apply Roles",
