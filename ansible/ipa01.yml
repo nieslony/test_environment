@@ -127,6 +127,9 @@
         description: "{{ item.description }}"
       with_items:
         - { name: vpn-users, description: "VPN Users" }
+        - { name: server-admins, description: "Server Administrators" }
+        - { name: client-admins, description: "Client Administrators" }
+        - { name: web-admins, description: "Web Administrators" }
 
     - name: "Add users to groups"
       ipagroup:
@@ -139,6 +142,12 @@
           - rossi
           - mustermann
           - doe
+        server-admins:
+          - rossi
+        web-admins:
+          - doe
+        client-admins:
+          - mustermann
 
     - name: "Create autofs map auto.data"
       ipaautomountmap:
@@ -176,6 +185,90 @@
       loop:
         - { name: autoconfig, type: CNAME, value: mail.linux.lab. }
         - { name: gw, type: A, value: "192.168.120.254" }
+
+    - name: "Create host groups"
+      ipahostgroup:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: "{{ item.name }}"
+        description: "{{ item.description | default('') }}"
+      loop:
+        - { name: servers, description: "Servers" }
+        - { name: clients, descriptions: "Clients (Notebooks, …)" }
+        - { name: web-servers, description: "Web Servers" }
+
+    - name: "Create HBAC service groups"
+      ipahbacsvcgroup:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: "{{ item.name }}"
+        hbacsvc: "{{ item.hbacsvc }}"
+      loop:
+        - name: local-login
+          hbacsvc:
+            - login
+            - gdm
+            - gdm-password
+            - kdm
+        - name: remote-login
+          hbacsvc:
+            - sshd
+        - name: become_admin
+          hbacsvc:
+            - su
+            - su-l
+            - sudo
+            - sudo-i
+
+    - name: "Create HBAC rules"
+      ipahbacrule:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: "{{ item.name }}"
+        group: "{{ item.group }}"
+        hostgroup: "{{ item.hostgroup }}"
+        hbacsvcgroup: "{{ item.hbacsvcgroup | default(omit) }}"
+        servicecategory: "{{ item.hbacsvcgroup is defined | ternary(omit, 'all') }}"
+      loop:
+        - name: login-ssh-servers
+          group: server-admins
+          hostgroup: servers
+          hbacsvcgroup: [local-login, remote-login, become_admin]
+        - name: login-clients
+          group: ipausers
+          hostgroup: clients
+          hbacsvcgroup: local-login
+        - name: ssh-clients
+          group: client-admins
+          hostgroup: clients
+          hbacsvcgroup: [remote-login, become_admin]
+        - name: ipa-admins
+          group: admins
+          hostgroup: ipaservers
+          servicecategory: all
+
+    - name: "Create HBAC rule 'allow_all'"
+      ipahbacrule:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: allow_all
+        state: disabled
+
+    - name: "Create sudo rules"
+      ipasudorule:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: "{{ item.name }}"
+        hostgroup: "{{ item.hostgroup }}"
+        group: "{{ item.group }}"
+        runasusercategory: all
+        runasgroupcategory: all
+        cmdcategory: all
+      loop:
+        - name: server-admins_on_servers
+          hostgroup: servers
+          group: server-admins
+        - name: client-admins_on_servers
+          hostgroup: clients
+          group: client-admins
+        - name: ipaadmins_on_ipaservers
+          group: ipaadmins
+          hostgroup: ipaservers
 
     - name: Configure sssd
       ini_file:

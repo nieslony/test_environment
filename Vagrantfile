@@ -40,16 +40,10 @@ Vagrant.configure("2") do |config|
         libvirt.cpus = 2
         libvirt.memory = 2048
         libvirt.clock_offset = 'utc'
-        # libvirt.graphics_type = 'spice'
-        # libvirt.graphics_ip = "0.0.0.0"
-        # libvirt.graphics_port = -1
         libvirt.keymap = "de"
         libvirt.channel :type => 'unix',
             :target_name => 'org.qemu.guest_agent.0',
             :target_type => 'virtio'
-        # libvirt.channel :type => 'spicevmc',
-        #     :target_name => 'com.redhat.spice.0',
-        #     :target_type => 'virtio'
         libvirt.video_type = "qxl"
         libvirt.input :type => "mouse",
             :bus => "usb"
@@ -93,11 +87,14 @@ Vagrant.configure("2") do |config|
                 config_file: "ansible/ansible.cfg"
     end
 
-    def provision_ipa_member(cfg)
+    def provision_ipa_member(cfg, hostgroups = [])
         cfg.vm.provision "Join IPA Domain",
-                :type => "ansible" ,
-                :playbook => "ansible/join-ipa-domain.yml",
-                :config_file => "ansible/ansible.cfg"
+                type: "ansible" ,
+                playbook: "ansible/join-ipa-domain.yml",
+                config_file: "ansible/ansible.cfg",
+                extra_vars: {
+                        hostgroups: #{hostgroups}
+                        }
     end
 
     config.vm.define "dc01" do |dc01|
@@ -219,9 +216,9 @@ Vagrant.configure("2") do |config|
             libvirt.memory = 1024
         end
 
-        prepare_alma(fileserver, "9")
+        prepare_alma(fileserver, "10")
         setup_network(fileserver)
-        provision_ipa_member(fileserver)
+        provision_ipa_member(fileserver, ["servers"])
 
         fileserver.vm.provision "Apply Roles",
                 type: "ansible",
@@ -475,7 +472,7 @@ Vagrant.configure("2") do |config|
                 SHELL
 
                 setup_network(fedora4301, networks="Lab_Linux_Internal,Lab_Internet")
-                provision_ipa_member(fedora4301)
+                provision_ipa_member(fedora4301, ["clients"])
 
                 fedora4301.vm.provision "Apply Roles",
                                 type: "ansible",

@@ -1,5 +1,6 @@
 ipadm_password: "{{ ipa.admin_password }}"
 ipaadmin_password: "{{ ipa.admin_password }}"
+
 ipaserver_domain: linux.lab
 ipaserver_realm: LINUX.LAB
 ipaserver_no_dnssec_validation: yes
@@ -11,6 +12,13 @@ ipaserver_allow_zone_overlap: yes
 ipaserver_auto_reverse: no
 ipaserver_auto_forwarders: yes
 ipaserver_no_host_dns: yes
+
+ipareplica_domain: linux.lab
+ipaserver_realm: LINUX.LAB
+ipareplica_setup_ca: true
+ipareplica_setup_kra: true
+ipareplica_setup_dns: true
+ipareplica_setup_adtrust: true
 
 ipaclient_domain: linux.lab
 ipaclient_force_join: yes

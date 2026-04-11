@@ -58,6 +58,17 @@
     state: present
 
   post_tasks:
+  - name: "Add host to host groups"
+    freeipa.ansible_freeipa.ipahostgroup:
+      ipaadmin_password: "{{ ipaadmin_password }}"
+      name: "{{ item }}"
+      host: "{{ ansible_fqdn }}"
+      action: member
+    loop: "{{ hostgroups }}"
+    when:
+      - hostgroups is defined
+      - hostgroups | length > 0
+
   - name: "Configure LDAP"
     lineinfile:
       path: /etc/ldap/ldap.conf
