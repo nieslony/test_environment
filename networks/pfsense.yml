@@ -10,7 +10,7 @@
     ansible_ssh_extra_args: '-o ControlMaster=auto -o ControlPersist=60s -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o TCPKeepAlive=yes'
 
     openVpn_ip: "192.168.101.250"
-    ipa_ip: "192.168.120.20"
+    ipa_ips: "192.168.120.20 192.168.120.21"
     site_vpn_net: "192.168.130.0/24"
     user_vpn_net: "192.168.131.0/24"
     hostname: gw
@@ -91,12 +91,31 @@
         domain: "{{ domain }}"
         timezone: Europe/Vienna
 
-    - name: "Create host alias"
+    - name: "Create host alias for arachne"
       pfsensible.core.pfsense_alias:
         name: host_arachne
         descr: Arachne OpenVPN server
         type: host
         address: "{{ openVpn_ip }}"
+        state: present
+
+    - name: "Create network aliases"
+      pfsensible.core.pfsense_alias:
+        name: "network_{{ item.name }}"
+        descr: "{{ item.name }}"
+        type: network
+        address: "{{ item.network }}"
+        state: present
+      loop:
+        - { name: VPNs, network: "{{ user_vpn_net }} {{ site_vpn_net }}" }
+        - { name: Internet, network: "192.168.100.0/24" }
+
+    - name: "Create host alias for IPA servers"
+      pfsensible.core.pfsense_alias:
+        name: host_ipaservers
+        descr: IPA Servers
+        type: host
+        address: "{{ ipa_ips }}"
         state: present
 
     - name: "Allow LAN to everywhere"
@@ -125,32 +144,29 @@
         - dst: "192.168.101.254"
           port: 53
           proto: tcp/udp
-        - dst: "{{ ipa_ip }}"
+        - dst: host_ipaservers
           port: 53
           proto: tcp/udp
-        - dst: "{{ ipa_ip }}"
+        - dst: host_ipaservers
           port: 88
           proto: tcp/udp
-        - dst: "{{ ipa_ip }}"
+        - dst: host_ipaservers
           port: 389
-        - dst: "{{ ipa_ip }}"
+        - dst: host_ipaservers
           port: 443
-        - dst: "{{ ipa_ip }}"
+        - dst: host_ipaservers
           port: 636
-        - dst: "192.168.100.0/24"
+        - dst: network_Internet
           port: 22
 
     - name: "Allow all from VPNs to LAN"
       pfsensible.core.pfsense_rule:
-        name: "Allow all from {{ item }} to LAN"
+        name: "Allow all from VPNs to LAN"
         interface: opt2
         destination: any
-        source: "{{ item }}"
+        source: network_VPNs
         quick: false
         state: present
-      with_items:
-        - "{{ user_vpn_net }}"
-        - "{{ site_vpn_net }}"
 
     - name: "Allow ICMP"
       pfsensible.core.pfsense_rule:
@@ -163,7 +179,7 @@
         state: present
       with_items:
         - 192.168.101.254
-        - 192.168.120.20
+        - host_ipaservers
 
     - name: "Configure DNS resolver"
       pfsensible.core.pfsense_dns_resolver:
@@ -248,6 +264,7 @@
       delegate_to: 127.0.0.1
       vars:
         ansible_python_interpreter: /usr/bin/python3
+      notify: reboot
 
     - name: "Set IP ranges"
       xml:
@@ -272,6 +289,7 @@
       delegate_to: 127.0.0.1
       vars:
         ansible_python_interpreter: /usr/bin/python3
+      notify: reboot
 
     - name: "Enable kea dhcpserver"
       xml:
@@ -282,6 +300,7 @@
       delegate_to: 127.0.0.1
       vars:
         ansible_python_interpreter: /usr/bin/python3
+      notify: reboot
 
     - name: "Add node unbound"
       xml:
@@ -291,6 +310,7 @@
       delegate_to: 127.0.0.1
       vars:
         ansible_python_interpreter: /usr/bin/python3
+      notify: reboot
 
     - name: "Create backup of config.xml"
       copy:
@@ -304,5 +324,7 @@
         content: "{{ config_xml.xmlstring }}"
         dest: /conf/config.xml
 
+  handlers:
     - name: "Apply and reboot"
       reboot:
+      listen: reboot
