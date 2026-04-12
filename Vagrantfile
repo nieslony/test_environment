@@ -56,6 +56,11 @@ Vagrant.configure("2") do |config|
             libvirt.storage :file, :size => '16G'
         end
 
+        cfg.vm.provision "shell",
+            name: "Disable cloud init",
+            run: "always",
+            inline: "touch /etc/cloud/cloud-init.disabled"
+
         cfg.vm.provision "ansible",
                 playbook: "ansible/create-LVM-and-swap.yml",
                 config_file: "ansible/ansible.cfg"
