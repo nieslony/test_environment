@@ -26,8 +26,8 @@ Vagrant.configure("2") do |config|
             "vagrant-proxyconf",
             "vagrant-reload",
             "vagrant-timezone",
-            "winrm",
-            "winrm-elevated"
+#            "winrm",
+#            "winrm-elevated"
     ]
 
     config.proxy.http = global_config["proxy_url"]
