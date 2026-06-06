@@ -26,8 +26,9 @@ Vagrant.configure("2") do |config|
             "vagrant-proxyconf",
             "vagrant-reload",
             "vagrant-timezone",
-#            "winrm",
-#            "winrm-elevated"
+            "vagrant-dns",
+            "winrm",
+            "winrm-elevated"
     ]
 
     config.proxy.http = global_config["proxy_url"]
@@ -35,6 +36,16 @@ Vagrant.configure("2") do |config|
     config.proxy.no_proxy = "localhost,127.0.0.1,192.168.0.0/16,linux.lab,.linux.lab"
     config.proxy.enabled = { docker: false }
     config.timezone.value = :host
+    config.dns.tld = "lab"
+    config.dns.ip = config.dns.ip = -> (vm, opts) do
+        ip = nil
+        vm.communicate.execute(
+                "hostname -I | tr ' ' '\n' | grep -v 192.168.121. | head -1"
+        ) do |type, data|
+                ip = data.strip if type == :stdout
+        end
+        ip
+    end
 
     config.vm.provider :libvirt do |libvirt|
         libvirt.cpus = 2
@@ -356,6 +367,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.define "remote_host" do |remote_host|
         remote_host.vm.hostname = "remote-host.test.lab"
+        remote_host.dns.patterns = [/^remote-host.test.lab$/]
 
         remote_host.vm.provider :libvirt do |libvirt|
             libvirt.memory = 1024
