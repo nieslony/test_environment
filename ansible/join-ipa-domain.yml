@@ -44,7 +44,7 @@
         name: "{{ ansible_fqdn }}"
         state: absent
         update_dns: yes
-      delegate_to: "{{ ipa01_ip.stdout }}"
+      delegate_to: "{{ ipa01_ip.stdout | default('localhost') }}"
       vars:
         ansible_user: vagrant
         ansible_private_key_file: "{{ ipa01_ssh_key }}"
