@@ -541,6 +541,36 @@ Vagrant.configure("2") do |config|
                                 config_file: "ansible/ansible.cfg"
     end # fedora43-01
 
+    config.vm.define "fedora44-01" do |fedora4401|
+            fedora4401.vm.box = "fedora/44-cloud-base"
+            fedora4401.vm.box_url = "https://mirror.alwyzon.net/fedora/linux/releases/44/Cloud/x86_64/images/Fedora-Cloud-Base-Vagrant-libvirt-44-1.7.x86_64.vagrant.libvirt.box"
+            fedora4401.vm.hostname = "fedora44-01.linux.lab"
+            fedora4401.nfs.functional = false
+
+            fedora4401.vm.provider :libvirt do |libvirt|
+                    libvirt.memory = 4196
+                    libvirt.machine_virtual_size = 44
+            end
+
+            fedora4401.vm.provision "Resize /",
+                type: "shell",
+                inline: <<-SHELL
+                set -eu
+                PART_NR=$( mount | awk '/ \\/ / { print substr($1, 9, 2); }' )
+                growpart /dev/vda $PART_NR
+                btrfs filesystem resize max /
+                dnf install -y python3-libdnf5
+                SHELL
+
+                setup_network(fedora4401, networks="Lab_Linux_Internal,Lab_Internet")
+                provision_ipa_member(fedora4401, ["clients"])
+
+                fedora4401.vm.provision "Apply Roles",
+                                type: "ansible",
+                                playbook: "ansible/roles/workstation.yml",
+                                config_file: "ansible/ansible.cfg"
+    end # fedora44-01
+
     config.vm.define "debian13-01" do |debian1301|
             debian1301.vm.box = "cloud-image/debian-13"
             debian1301.vm.hostname = "debian13-01.linux.lab"
